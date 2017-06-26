@@ -1,0 +1,324 @@
+import Vector
+-- import Clause
+-- import Assignments
+-- import ImplicationGraph
+-- import Instance
+-- import CDCL
+-- import Parser
+-- import Solver
+-- import Heuristics
+-- import Util
+
+active class Main
+  var isSolved : bool
+  var solvers : [Solver]
+  var filename : String --args(1)
+  var numSolvers : int
+  var iterations : int -- Number of times to spin before a solver checks for new clauses and invokes GC
+  var ccLength : int -- Maximum length of shared clauses
+  var ccNumber : int -- Maximum number of clauses to send per solver
+  var ccM : int -- Only send every ccM clause, -1 means sending all elegible clauses
+  var a : int -- ?
+  var restarts : int -- Number of conflicts before restarting, < 0 means no restars
+  var heuristics : Vector[Heuristics]
+  var customVals : Vector[int]
+  var customVars : Vector[int]
+
+  def addConflictClause(conflictClause : Clause, solverId : int) : unit
+    repeat i <- |this.solvers| do
+      if (i != solverId) then
+        (this.solvers(i))!addConflictClause(conflictClause)
+      end
+    end
+  end
+
+  def setSolved() : unit
+      this.isSolved = true
+  end
+
+  def getIsSolved() : bool
+      this.isSolved
+  end
+
+  def pause() : unit
+    EMBED (unit) fgetc(stdin); END
+  end
+
+  -- def printClauses(clauses : Vector[Clause]) : unit
+  --   println("Clauses to solve")
+  --   repeat n <- clauses.size() do
+  --     clauses.at(n).toString()
+  --   end
+  -- end
+
+  def charToInt(c : char) : int
+    if (c == '0') then
+      0
+    else if (c == '1') then
+      1
+    else if (c == '2') then
+      2
+    else if (c == '3') then
+      3
+    else if (c == '4') then
+      4
+    else if (c == '5') then
+      5
+    else if (c == '6') then
+      6
+    else if (c == '7') then
+      7
+    else if (c == '8') then
+      8
+    else if (c == '9') then
+      9
+    else
+      println("Cannot convert char {} to int, exiting. ", c)
+      exit(1)
+      0 -- to avoid compilation error with different types of if else
+    end
+  end
+
+  def stringToInt(s : String) : int
+    val carr = s.to_array()
+    var sum = 0
+    var mul = 1
+    val sign = if (carr(0) == '-') then -1 else 1 end
+    val len = s.length()
+    repeat i <- len do
+      if ((sign == 1) || (i != len - 1)) then
+          sum = sum + mul * this.charToInt(carr(len - i - 1))
+          mul = mul * 10
+      else
+          sum = sum * sign
+      end
+    end
+    sum
+  end
+
+  def preProcess(clauses : Vector[Clause], nVars : int) : [int]
+    val exists = new [bool](nVars)
+
+    -- Vectors take an initial size and expand dynamically
+    val varsToAssign = new Vector[int](10)
+
+    var j = 0
+    while (j < clauses.size()) do
+      var clause = clauses.at(j)
+      var k = 0
+      val kLimit = clause.size()
+      -- TODO: not sure what this does?
+      -- Why does a clause has an array of numbers?
+      while (k < kLimit) do
+        exists(clause.literals(k)/2) = true
+        k = k + 1
+      end
+      j = j + 1
+    end
+
+    repeat i <- |exists| do
+      if (not exists(i)) then
+        varsToAssign.push(i)
+      end
+    end
+    varsToAssign.toArray()
+  end
+
+  -- set up initial state
+  def private initialSetup(): unit
+    this.filename = "" : String --args(1)
+    this.numSolvers = 4
+    this.iterations = 1 -- Number of times to spin before a solver checks for new clauses and invokes GC
+    this.ccLength = 10 -- Maximum length of shared clauses
+    this.ccNumber = -1 -- Maximum number of clauses to send per solver
+    this.ccM = -1 -- Only send every ccM clause, -1 means sending all elegible clauses
+    this.a = 1
+    this.restarts = -1 -- Number of conflicts before restarting, < 0 means no restars
+    this.heuristics = new LinearQueue[Heuristics](1)
+    this.customVals = new Vector[int](1)
+    this.customVars = new Vector[int](1)
+  end
+
+  def private parseCommandLineArgs(): unit
+    this.parseArgs(this.a)
+    this.validateArgs()
+  end
+
+  def private parseArgs(var a: int): unit
+    while (a < |args|) do
+        if ((args(a)).equals("-s")) then
+          if (a + 1 < |args|) then
+            this.numSolvers = this.stringToInt(args(a + 1))
+            a = a + 1
+          else
+            print("Missing argument for -s")
+          end
+
+          if ((args(a + 1)).equals("-heu")) then
+            a = a + 1
+            repeat i <- this.numSolvers do
+              if (a + 2 >= |args|) then
+                print("Missing arguments for -heu, exiting.\n")
+                exit(-1)
+              end
+              this.customVals.push(this.stringToInt(args(a + 1)))
+              this.customVars.push(this.stringToInt(args(a + 2)))
+              a = a + 2
+            end
+          end
+        else if ((args(a)).equals("-i")) then
+          if (a + 1 < |args|) then
+            this.iterations = this.stringToInt(args(a + 1))
+            a = a + 1
+          else
+            println("Missing argument for -i")
+          end
+        else if ((args(a)).equals("-ccl")) then
+          if (a + 1 < |args|) then
+            this.ccLength = this.stringToInt(args(a + 1))
+            a = a + 1
+          else
+            println("Missing argument for -ccl")
+          end
+        else if ((args(a)).equals("-ccn")) then
+          if (a + 1 < |args|) then
+            this.ccNumber = this.stringToInt(args(a + 1))
+            a = a + 1
+          else
+            println("Missing argument for -ccn")
+          end
+        else if ((args(a)).equals("-ccm")) then
+          if (a + 1 < |args|) then
+            this.ccM = this.stringToInt(args(a + 1))
+            a = a + 1
+          else
+            println("Missing argument for -ccm")
+          end
+        else if ((args(a)).equals("-r")) then
+          if (a + 1 < |args|) then
+            this.restarts = this.stringToInt(args(a + 1))
+            a = a + 1
+          else
+            print("Missing argument for -r")
+          end
+        else
+          if (|args| - 1 == a) then
+            this.filename = args(a)
+          else
+            println("Wrong arguments, exiting.")
+            println("{}", "Usage: ")
+            println("{}", args(0))
+            println(" [-s nsolvers [-heu val1 var1 val2 var2 ...] | -i niter | -ccl len | -ccn num | -ccm num | -r restart ] filename")
+            exit(-1)
+          end
+        end
+        a = a + 1
+    end
+  end
+
+  def private validateArgs(): unit
+      -- check for inconsistencies. Maybe better to put together up there
+    if (this.numSolvers <= 0) then
+      println("Illegal number of solver: {}, exiting.\n", this.numSolvers)
+      exit(-1)
+    end
+    if (this.iterations <= 0) then
+      println("Illegal number of iterations: {}, exiting.\n", this.iterations)
+      exit(-1)
+    end
+    if (this.ccLength < -1) then
+      println("Illegal conflict clause max length: {}, exiting.\n", this.ccLength)
+      exit(-1)
+    end
+    if (this.ccNumber < -1) then
+      println("Illegal conflict clause maximum number: {}, exiting.\n", this.ccNumber)
+      exit(-1)
+    end
+    if (this.ccM < -1) then
+      println("Illegal conflict clause quantity number: {}, exiting.\n", this.ccM)
+      exit(-1)
+    end
+    if (this.filename.equals("")) then
+      print("No input file specified, exiting.")
+      exit(-1)
+    end
+  end
+
+  def private setupHeuristics(clauses: Vector[Clause], val nVars: int): unit
+    repeat i <- this.customVals.size() do
+      this.heuristics.push(new Heuristics(this.customVals.at(i), this.customVars.at(i), nVars, clauses))
+    end
+
+    this.heuristics.push(new Heuristics(3,6, nVars, clauses)) --VSIDS
+    this.heuristics.push(new Heuristics(0,0, nVars, clauses)) --Literal false literal forward
+    this.heuristics.push(new Heuristics(0,5, nVars, clauses)) --Literal false smallest
+    this.heuristics.push(new Heuristics(2,5, nVars, clauses)) --Value random smallest
+    this.heuristics.push(new Heuristics(3,0, nVars, clauses)) --Variable false literal forward
+    this.heuristics.push(new Heuristics(3,1, nVars, clauses)) --Variable false literal back
+    this.heuristics.push(new Heuristics(4,6, nVars, clauses)) --VSIDS
+    this.heuristics.push(new Heuristics(4,0, nVars, clauses)) --Variable true literal forward
+    this.heuristics.push(new Heuristics(2,6, nVars, clauses)) --VSIDS random
+    this.heuristics.push(new Heuristics(4,1, nVars, clauses)) --Variable true literal back
+    this.heuristics.push(new Heuristics(1,4, nVars, clauses)) --Literal true largest
+    this.heuristics.push(new Heuristics(0,1, nVars, clauses)) --Literal false literal back
+    this.heuristics.push(new Heuristics(2,0, nVars, clauses)) --Value random literal forward
+    this.heuristics.push(new Heuristics(2,1, nVars, clauses)) --Value random literal back
+    this.heuristics.push(new Heuristics(0,4, nVars, clauses)) --Literal false largest
+    this.heuristics.push(new Heuristics(1,0, nVars, clauses)) --Literal true literal forward
+    this.heuristics.push(new Heuristics(2,2, nVars, clauses)) --Value random variable forward
+    this.heuristics.push(new Heuristics(2,3, nVars, clauses)) --Value random variable back
+    this.heuristics.push(new Heuristics(2,4, nVars, clauses)) --Value random largest
+    this.heuristics.push(new Heuristics(3,2, nVars, clauses)) --Variable false variable forward
+    this.heuristics.push(new Heuristics(4,4, nVars, clauses)) --Variable true largest
+    this.heuristics.push(new Heuristics(3,3, nVars, clauses)) --Variable false variable back
+    this.heuristics.push(new Heuristics(4,2, nVars, clauses)) --Variable true variable forward
+    this.heuristics.push(new Heuristics(1,1, nVars, clauses)) --Literal true literal back
+    this.heuristics.push(new Heuristics(1,5, nVars, clauses)) --Literal true smallest
+    this.heuristics.push(new Heuristics(3,5, nVars, clauses)) --Variable false smallest
+    this.heuristics.push(new Heuristics(4,3, nVars, clauses)) --Variable true variable back
+    this.heuristics.push(new Heuristics(3,4, nVars, clauses)) --Variable false largest
+    this.heuristics.push(new Heuristics(4,5, nVars, clauses)) --Variable true smallest
+  end
+
+  def main(args : [String]) : unit
+    this.isSolved = false
+    if ((|args| == 1) || ((args(1)).equals("-h"))) then
+        println("{}", "Usage: ")
+        println("{}", args(0))
+        println(" [-s nsolvers [-heu val1 var1 val2 var2 ...] | -i niter | -ccl len | -ccn num | -ccm num | -r restart ] filename")
+        exit(-1)
+    end
+
+    -- TODO: this could possibly be done after parsing command line args
+    this.initialSetup()
+
+    -- Update state via command line
+    this.parseCommandLineArgs()
+
+    -- Parsing phase. new method
+    val parser = (new Parser(this.filename)).parseFile()
+
+    var clauses = parser.getClauses()
+    var nVars = parser.getnVariables()
+    this.setupHeuristicts(clauses, nVars)
+
+    WAMP("Creating Solver")
+    var varsToAssign = this.preProcess(clauses, nVars)
+    this.solvers = new [Solver](this.numSolvers)
+
+    val futs = new [Fut[unit]](this.numSolvers)
+    repeat i <- this.numSolvers do
+      this.solvers(i) = new Solver(parser.getClauses(), parser.getnVariables(), varsToAssign, this.heuristics.at(i), this, i, this.ccLength, this.iterations, this.ccNumber, this.ccM, this.restarts)
+    end
+    -- repeat i <- this.numSolvers do
+    --   val solver = this.solvers(i)
+    --   WAMP("Calling Start")
+    --   futs(i) = solver!start()
+    -- end
+
+    -- for f <- futs do
+    --   await(f)
+    -- end
+    -- WAMP("Out the bottom")
+  end
+end

@@ -1,0 +1,17 @@
+module Util
+
+fun literalToVarIndex(literal : int) : int
+  literal / 2
+end
+
+fun unjust[t](m : Maybe[t]) : t
+  match m with
+    case Just(x) => x
+  end
+end
+
+fun WAMP(s : String) : unit
+  if false then 
+    println(s) 
+  end
+end

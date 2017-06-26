@@ -1,0 +1,131 @@
+module Solver
+
+import Vector
+import Clause
+import Main
+import Heuristics
+import CDCL
+import Assignments
+import Util
+
+class Solver
+  -- unused after initialisation. removing
+  -- val clauses : Vector[Clause] -- passive and shared among other solvers and cdcl
+  val n_vars : int
+  -- cdcl: each CDCL shares clauses and heuristics.
+  val cdcl : CDCL
+  -- heuristics: passive, shared among solvers. this active object does not cause
+  --             mutation to this variable. In fact, it's only used to print
+  --             a value from an integer, which is set a never modified.
+  --             Pass the int instead and create functions to return the appropriate String
+  val heuristics : Heuristics
+  val master : Main  -- actor
+  val solverId : int
+  val iterations : int -- How long to spin before calling itself with a message
+  val ccLength : int
+  val restartCounterMax : int
+  val ccNum : int -- How many conflict clauses to send
+  val ccM : int
+
+  -- TODO: these below are not shared, make them linear
+  var ccSent : int
+  var ccCounter : int
+  var restartCounter : int
+
+
+  def init(clauses : Vector[Clause], n_vars : int, varsToAssign : [int], heuristics : Heuristics, master : Main, solverId : int, ccLength : int, iterations : int, ccNumber : int, ccM : int, restart : int) : unit
+    -- this.clauses = clauses
+    this.n_vars = n_vars
+    this.heuristics = heuristics
+    this.master = master
+    this.cdcl = new CDCL(this.clauses, this.n_vars, varsToAssign, this.heuristics, solverId)
+    this.solverId = solverId
+    this.ccLength = ccLength
+    this.iterations = iterations
+    this.ccNum = ccNumber
+    this.ccM = ccM
+    this.ccCounter = -1
+    this.ccSent = 0
+    this.restartCounter = 0
+    this.restartCounterMax = restart
+  end
+
+  def start() : unit
+    val solveable = true
+    val done = false
+    WAMP("Started Solver.")
+    this.loop(solveable, done)
+  end
+
+  def finishLoop(solveable : bool) : unit
+    if(not get(this.master!getIsSolved())) then
+      if (solveable) then
+        this.master!setSolved()
+        println("Satisfiable!")
+        val correct = get(this.cdcl!checkCorrectness())
+        if (correct && solveable) then
+          println("Solution is correct, and was found by solver number {}:", this.solverId)
+          this.heuristics.variableSelectionToString()
+          this.heuristics.valueSelectionToString()
+        else
+          println("Solution is incorrect.")
+        end
+
+        val conflicts = get(this.cdcl!getAllConflicts())
+        val assignments = get(this.cdcl!getAssignments())
+        val nSetVars = get(this.cdcl!getSetVars())
+        assignments.toString()
+        println("Number of own conflicts: {}, number of received conflicts {}", conflicts(0), conflicts(1))
+        println("")
+      else
+        println("Problem found unsatisfiable by solver {}", this.solverId)
+      end
+    end
+  end
+
+  def loop(var solveable : bool, var done : bool) : unit
+    WAMP("Starting Loop.")
+    var i = 0
+    val solver = this
+    var shouldEnd = false
+    while (i < this.iterations) do
+      WAMP("Iterating")
+      if (solveable && not done && not get(this.master!getIsSolved())) then
+        val res = get(this.cdcl!solve())
+        solveable = res.0
+        done = res.1
+        if (res.2) then
+          if ((this.ccNum == -1) || (this.ccSent < this.ccNum)) then
+            val conflictClause = get(this.cdcl!getLatestConflictClause())
+            if ((this.ccLength == -1) || (conflictClause.size() <= this.ccLength)) then
+              this.ccCounter = this.ccCounter + 1
+              if (this.ccCounter%this.ccM == 0) then
+                this.master ! addConflictClause(conflictClause, this.solverId)
+                this.ccSent = this.ccSent + 1
+              end
+            end
+          end
+          this.restartCounter = this.restartCounter + 1
+          if (this.restartCounter == this.restartCounterMax) then
+            this.restartCounter = 0
+            this.cdcl!restart()
+          end
+        end
+      else
+        i = this.iterations -- break
+        shouldEnd = true
+        this.finishLoop(solveable)
+      end
+      i = i + 1
+    end
+    WAMP("Out bottom of iteration")
+    if (not shouldEnd) then
+      solver ! loop(solveable, done) -- send message to self to allow gc,
+                                     -- and addConflictClause to run
+    end
+  end
+
+  def addConflictClause(conflictClause : Clause) : unit
+    this.cdcl!addConflictClause(conflictClause)
+  end
+end

@@ -1,0 +1,23 @@
+module Instance
+
+import Clause
+import ImplicationGraph
+import Vector
+
+passive class Instance
+-- public attributes
+  val nVars : int
+  val implicationGraph : ImplicationGraph
+-- private attributes
+  val clauses : Vector[Clause]
+
+  def init(clauses_ : Vector[Clause], nVars_ : int) : unit
+    this.clauses = clauses_
+    this.nVars = nVars_
+    this.implicationGraph = new ImplicationGraph(this.nVars/2)
+  end
+-- public methods
+  def addClause(clause : Clause) : unit
+    this.clauses.push(clause)
+  end
+end

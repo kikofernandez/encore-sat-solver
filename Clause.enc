@@ -1,0 +1,45 @@
+module Clause
+
+import Vector
+
+-- TODO: should be read
+read class Clause
+-- public attributes
+  val literals : [int]
+
+  def init(literals_ : [int]) : unit
+    this.literals = literals_
+  end
+
+-- public methods
+  -- DEBUG method
+  def toString() : unit
+    print("Clause: {}","")
+    repeat i <- |this.literals| do
+      print("{}", this.literals(i)/2+1)
+      if (this.literals(i)%2 == 1) then
+        print("' {}", "")
+      else
+        print(" {}","")
+      end
+    end
+    println("")
+  end
+
+  def toConflictClause() : Clause
+    val conflictLiterals = new Vector[int](|this.literals|)
+    repeat i <- |this.literals| do
+      if (this.literals(i) % 2 == 0) then
+        conflictLiterals.push(this.literals(i)+1)
+      else
+        conflictLiterals.push(this.literals(i)-1)
+      end
+    end
+    new Clause(conflictLiterals.toArray())
+  end
+
+  -- TODO: replace |clause.literals| by clause.size(), everywhere
+  def size() : int
+    |this.literals|
+  end
+end

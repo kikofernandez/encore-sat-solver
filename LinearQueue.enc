@@ -1,0 +1,63 @@
+module LinearQueue
+
+fun unjust[linear t](x : Maybe[Link[t]]) : Link[t]
+  match x with
+    case Just(ice) => ice
+    case Nothing => abort("Cannot unjust Nothing.")
+  end
+end
+
+
+subord class Link[linear t]
+  var next : Maybe[Link[t]]
+  var data : Maybe[t] 
+end
+
+
+local class LinearQueue[linear t]
+-- private attributes
+  var head : Maybe[Link[t]]
+  var tail : Maybe[Link[t]]
+  var no_elements : int
+
+  def init() : unit
+    this.head = Nothing
+    this.tail = Nothing
+    this.no_elements = 0
+  end
+  
+-- public methods
+  def is_empty() : bool
+    this.no_elements == 0
+  end
+
+  def queue(var data : Maybe[t]) : unit
+    val old_tail = unjust(this.tail)
+    val tail = new Link[t]()
+    tail.data = consume data
+    tail.next = Nothing : Maybe[Link[t]]
+    this.tail = Just(tail)
+    if this.is_empty() then
+      this.head = this.tail
+    else
+      old_tail.next = this.tail
+    end
+    this.no_elements += 1
+  end
+
+  def dequeue() : Maybe[t]
+    if this.is_empty() then
+      Nothing : Maybe[t]
+    else
+      var head = unjust(consume this.head)
+      var data = consume head.data
+      var next = head.next
+      this.head = next
+      this.no_elements -= 1
+      if this.is_empty() then
+        this.tail = Nothing
+      end
+      consume data
+    end
+  end
+end

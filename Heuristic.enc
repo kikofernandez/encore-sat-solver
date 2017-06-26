@@ -1,4 +1,4 @@
-module Heuristics
+module Heuristic
 
 import Util
 import Assignments
@@ -22,7 +22,7 @@ BODY
 
 END
 
-passive class Heuristics
+linear class Heuristic
   val valueSelection : int
   val variableSelection : int
   val branchOnVariable : bool

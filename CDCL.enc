@@ -5,12 +5,12 @@ import Vector
 import Clause
 import Instance
 import Assignments
-import Heuristics
+import Heuristic
 import ImplicationGraph
 
 class CDCL
 -- private attributes
-  val heuristics : Heuristics
+  val heuristics : Heuristic
   var assignments : Assignments
   val instance : Instance
   var dL : int
@@ -34,7 +34,7 @@ class CDCL
     [this.nConflicts, this.nRecievedConflicts]
   end
 
-  def init(clauses : Vector[Clause], nVars : int, varsToAssign : [int], heuristics : Heuristics, solverId : int) : unit
+  def init(clauses : Vector[Clause], nVars : int, varsToAssign : [int], heuristics : Heuristic, solverId : int) : unit
     this.assignments = new Assignments(nVars*2, varsToAssign)
     this.originalNOfClauses = clauses.size()
     this.instance = new Instance(clauses, nVars*2)

@@ -10,7 +10,7 @@ end
 
 subord class Link[linear t]
   var next : Maybe[Link[t]]
-  var data : Maybe[t] 
+  var data : Maybe[t]
 end
 
 
@@ -25,13 +25,13 @@ local class LinearQueue[linear t]
     this.tail = Nothing
     this.no_elements = 0
   end
-  
+
 -- public methods
   def is_empty() : bool
     this.no_elements == 0
   end
 
-  def queue(var data : Maybe[t]) : unit
+  def enqueue(var data : Maybe[t]) : unit
     val old_tail = unjust(this.tail)
     val tail = new Link[t]()
     tail.data = consume data

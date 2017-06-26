@@ -6,7 +6,7 @@ import Clause
 -- import CDCL
 import Parser
 import Solver
-import Heuristics
+import Heuristic
 import Util
 import LinearQueue
 
@@ -114,36 +114,36 @@ active class Main
     varsToAssign.toArray()
   end
 
-  def private setupHeuristics(heuristics: Heuristics, clauses: Vector[Clause], val nVars: int): unit
-    heuristics.enqueue(new Heuristics(3,6, nVars, clauses)) --VSIDS
-    heuristics.enqueue(new Heuristics(0,0, nVars, clauses)) --Literal false literal forward
-    heuristics.enqueue(new Heuristics(0,5, nVars, clauses)) --Literal false smallest
-    heuristics.enqueue(new Heuristics(2,5, nVars, clauses)) --Value random smallest
-    heuristics.enqueue(new Heuristics(3,0, nVars, clauses)) --Variable false literal forward
-    heuristics.enqueue(new Heuristics(3,1, nVars, clauses)) --Variable false literal back
-    heuristics.enqueue(new Heuristics(4,6, nVars, clauses)) --VSIDS
-    heuristics.enqueue(new Heuristics(4,0, nVars, clauses)) --Variable true literal forward
-    heuristics.enqueue(new Heuristics(2,6, nVars, clauses)) --VSIDS random
-    heuristics.enqueue(new Heuristics(4,1, nVars, clauses)) --Variable true literal back
-    heuristics.enqueue(new Heuristics(1,4, nVars, clauses)) --Literal true largest
-    heuristics.enqueue(new Heuristics(0,1, nVars, clauses)) --Literal false literal back
-    heuristics.enqueue(new Heuristics(2,0, nVars, clauses)) --Value random literal forward
-    heuristics.enqueue(new Heuristics(2,1, nVars, clauses)) --Value random literal back
-    heuristics.enqueue(new Heuristics(0,4, nVars, clauses)) --Literal false largest
-    heuristics.enqueue(new Heuristics(1,0, nVars, clauses)) --Literal true literal forward
-    heuristics.enqueue(new Heuristics(2,2, nVars, clauses)) --Value random variable forward
-    heuristics.enqueue(new Heuristics(2,3, nVars, clauses)) --Value random variable back
-    heuristics.enqueue(new Heuristics(2,4, nVars, clauses)) --Value random largest
-    heuristics.enqueue(new Heuristics(3,2, nVars, clauses)) --Variable false variable forward
-    heuristics.enqueue(new Heuristics(4,4, nVars, clauses)) --Variable true largest
-    heuristics.enqueue(new Heuristics(3,3, nVars, clauses)) --Variable false variable back
-    heuristics.enqueue(new Heuristics(4,2, nVars, clauses)) --Variable true variable forward
-    heuristics.enqueue(new Heuristics(1,1, nVars, clauses)) --Literal true literal back
-    heuristics.enqueue(new Heuristics(1,5, nVars, clauses)) --Literal true smallest
-    heuristics.enqueue(new Heuristics(3,5, nVars, clauses)) --Variable false smallest
-    heuristics.enqueue(new Heuristics(4,3, nVars, clauses)) --Variable true variable back
-    heuristics.enqueue(new Heuristics(3,4, nVars, clauses)) --Variable false largest
-    heuristics.enqueue(new Heuristics(4,5, nVars, clauses)) --Variable true smallest
+  def private setupHeuristics(heuristics: LinearQueue[Heuristic], clauses: Vector[Clause], val nVars: int): unit
+    heuristics.enqueue(new Heuristic(3,6, nVars, clauses)) --VSIDS
+    heuristics.enqueue(new Heuristic(0,0, nVars, clauses)) --Literal false literal forward
+    heuristics.enqueue(new Heuristic(0,5, nVars, clauses)) --Literal false smallest
+    heuristics.enqueue(new Heuristic(2,5, nVars, clauses)) --Value random smallest
+    heuristics.enqueue(new Heuristic(3,0, nVars, clauses)) --Variable false literal forward
+    heuristics.enqueue(new Heuristic(3,1, nVars, clauses)) --Variable false literal back
+    heuristics.enqueue(new Heuristic(4,6, nVars, clauses)) --VSIDS
+    heuristics.enqueue(new Heuristic(4,0, nVars, clauses)) --Variable true literal forward
+    heuristics.enqueue(new Heuristic(2,6, nVars, clauses)) --VSIDS random
+    heuristics.enqueue(new Heuristic(4,1, nVars, clauses)) --Variable true literal back
+    heuristics.enqueue(new Heuristic(1,4, nVars, clauses)) --Literal true largest
+    heuristics.enqueue(new Heuristic(0,1, nVars, clauses)) --Literal false literal back
+    heuristics.enqueue(new Heuristic(2,0, nVars, clauses)) --Value random literal forward
+    heuristics.enqueue(new Heuristic(2,1, nVars, clauses)) --Value random literal back
+    heuristics.enqueue(new Heuristic(0,4, nVars, clauses)) --Literal false largest
+    heuristics.enqueue(new Heuristic(1,0, nVars, clauses)) --Literal true literal forward
+    heuristics.enqueue(new Heuristic(2,2, nVars, clauses)) --Value random variable forward
+    heuristics.enqueue(new Heuristic(2,3, nVars, clauses)) --Value random variable back
+    heuristics.enqueue(new Heuristic(2,4, nVars, clauses)) --Value random largest
+    heuristics.enqueue(new Heuristic(3,2, nVars, clauses)) --Variable false variable forward
+    heuristics.enqueue(new Heuristic(4,4, nVars, clauses)) --Variable true largest
+    heuristics.enqueue(new Heuristic(3,3, nVars, clauses)) --Variable false variable back
+    heuristics.enqueue(new Heuristic(4,2, nVars, clauses)) --Variable true variable forward
+    heuristics.enqueue(new Heuristic(1,1, nVars, clauses)) --Literal true literal back
+    heuristics.enqueue(new Heuristic(1,5, nVars, clauses)) --Literal true smallest
+    heuristics.enqueue(new Heuristic(3,5, nVars, clauses)) --Variable false smallest
+    heuristics.enqueue(new Heuristic(4,3, nVars, clauses)) --Variable true variable back
+    heuristics.enqueue(new Heuristic(3,4, nVars, clauses)) --Variable false largest
+    heuristics.enqueue(new Heuristic(4,5, nVars, clauses)) --Variable true smallest
   end
 
   def main(args : [String]) : unit
@@ -164,7 +164,7 @@ active class Main
     var ccM = -1 -- Only send every ccM clause, -1 means sending all elegible clauses
     var a = 1
     var restarts = -1 -- Number of conflicts before restarting, < 0 means no restars
-    var heuristics = new LinearQueue[Heuristics]()
+    var heuristics = new LinearQueue[Heuristic]()
     var customVals = new Vector[int](1)
     var customVars = new Vector[int](1)
 
@@ -272,7 +272,7 @@ active class Main
 
     -- Set up heuristics
     repeat i <- customVals.size() do
-      heuristics.enqueue(new Heuristics(customVals.at(i), customVars.at(i), nVars, clauses))
+      heuristics.enqueue(new Heuristic(customVals.at(i), customVars.at(i), nVars, clauses))
     end
     this.setupHeuristicts(heuristics, clauses, nVars)
 

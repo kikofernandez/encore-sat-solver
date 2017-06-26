@@ -2,7 +2,6 @@ module Clause
 
 import Vector
 
--- TODO: should be read
 read class Clause
 -- public attributes
   val literals : [int]

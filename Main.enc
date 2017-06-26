@@ -1,9 +1,5 @@
 import Vector
 import Clause
--- import Assignments
--- import ImplicationGraph -- maybe subord / local to CDCL
--- import Instance -- maybe subord / local to CDCL
--- import CDCL
 import Parser
 import Solver
 import Heuristic

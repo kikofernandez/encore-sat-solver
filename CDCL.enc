@@ -56,9 +56,9 @@ class CDCL
   --   end
   -- end
 
-  def pause() : unit
-    EMBED (unit) fgetc(stdin); END
-  end
+  -- def pause() : unit
+  --   EMBED (unit) fgetc(stdin); END
+  -- end
 
   def getInstance() : Instance
     this.instance

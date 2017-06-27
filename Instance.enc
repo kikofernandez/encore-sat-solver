@@ -11,8 +11,8 @@ local class Instance
 -- private attributes
   val clauses : VVector[Clause]
 
-  def init(clauses_ : VVector[Clause], nVars_ : int) : unit
-    this.clauses = clauses_
+  def init(var clauses_ : VVector[Clause], nVars_ : int) : unit
+    this.clauses =  consume clauses_
     this.nVars = nVars_
     this.implicationGraph = new ImplicationGraph(this.nVars/2)
   end

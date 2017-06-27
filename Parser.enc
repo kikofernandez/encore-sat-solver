@@ -135,7 +135,7 @@ local class Parser
     val newfile = this.file.data
     val filecontent = EMBED (int) read_file(#{newfile}); END
     val n_clauses = EMBED (int) get_n_clauses(); END
-    val clauses = new VVector[Clause](1)
+    var clauses = new VVector[Clause](1)
     val n_variables = EMBED (int) get_n_variables(); END
 
     repeat i <- n_clauses do
@@ -147,7 +147,7 @@ local class Parser
       clauses.push(new Clause(clause))
     end
     this.nvariables = n_variables
-    this.clauses = clauses
+    this.clauses = consume clauses
     return this
   end
 

@@ -1,0 +1,22 @@
+
+module LocalArray
+
+local class LocalArray[t]
+  val arr : [t]
+  
+  def init(size : int) : unit
+    this.arr = new[t](size)
+  end
+
+  def at(i : int) : t
+    this.arr(i)
+  end
+
+  def set(i : int, d : t) : unit
+    this.arr(i) = d
+  end
+  
+  def size() : int
+    |this.arr|
+  end
+end

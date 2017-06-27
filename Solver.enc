@@ -13,11 +13,6 @@ active class Solver
   val n_vars : int
   -- cdcl: each CDCL shares clauses and heuristics.
   val cdcl : CDCL
-  -- heuristic: passive, shared among solvers. this active object does not cause
-  --             mutation to this variable. In fact, it's only used to print
-  --             a value from an integer, which is set a never modified.
-  --             Pass the int instead and create functions to return the appropriate String
-  val heuristic : Heuristic
   val master : Main  -- actor
   val solverId : int
   val iterations : int -- How long to spin before calling itself with a message
@@ -33,9 +28,8 @@ active class Solver
   -- TODO: varsToAssign is a read-only array
   def init(clauses : RVector[Clause], n_vars : int, varsToAssign : RArray[int], var heuristic : Heuristic, master : Main, solverId : int, ccLength : int, iterations : int, ccNumber : int, ccM : int, restart : int) : unit
     this.n_vars = n_vars
-    this.heuristic = consume heuristic
     this.master = master
-    this.cdcl = new CDCL(clauses, this.n_vars, varsToAssign, this.heuristic, solverId)
+    this.cdcl = new CDCL(clauses, this.n_vars, varsToAssign, consume heuristic, solverId)
     this.solverId = solverId
     this.ccLength = ccLength
     this.iterations = iterations
@@ -62,8 +56,8 @@ active class Solver
         val correct = get(this.cdcl!checkCorrectness())
         if (correct && solveable) then
           println("Solution is correct, and was found by solver number {}:", this.solverId)
-          this.heuristic.variableSelectionToString()
-          this.heuristic.valueSelectionToString()
+          get(this.cdcl!variableSelectionToString())
+          get(this.cdcl!valueSelectionToString())
         else
           println("Solution is incorrect.")
         end

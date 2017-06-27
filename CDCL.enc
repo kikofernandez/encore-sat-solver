@@ -333,4 +333,12 @@ active class CDCL
     end
     toBeConflictClause
   end
+  
+  def variableSelectionToString() : unit
+    this.heuristics.variableSelectionToString()
+  end
+  
+  def valueSelectionToString() : unit
+    this.heuristics.valueSelectionToString()  
+  end
 end

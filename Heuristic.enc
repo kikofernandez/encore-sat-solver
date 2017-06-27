@@ -132,7 +132,7 @@ linear class Heuristic
       if (this.vsidsCounter == this.vsidsMax) then
         this.vsidsCounter = 0
         repeat i <- |this.vsidsCounters| do
-          this.vsidsCounters(i) =  this.vsidsCounters(i) * 0.5
+          this.vsidsCounters(i) = this.vsidsCounters(i) * 0.5
         end
       end
     end

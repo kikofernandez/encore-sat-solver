@@ -5,6 +5,8 @@ import Assignments
 import Clause
 import VVector
 import Vector
+import LocalArray
+import Array
 
 
 EMBED
@@ -49,14 +51,14 @@ linear class Heuristic
       repeat i <- clauses.size() do
         val clause = clauses.at(i)
         val literals = clause.literals
-        repeat j <- |literals| do
-          this.vsidsCounters(literals(j) / 2) = this.vsidsCounters(literals(j) / 2) + 1.0
+        repeat j <- literals.size() do
+          this.vsidsCounters(literals.at(j) / 2) = this.vsidsCounters(literals.at(j) / 2) + 1.0
         end
       end
     end
   end
 
-  def getVariableSelection(variables : [Variable], clauses : Vector[Clause]) : [int]
+  def getVariableSelection(variables : LocalArray[Variable], clauses : Vector[Clause]) : (int,int)
     match this.variableSelection with
       {- Literal Forward -}
       case 0 => this.forwardLiteralInOrder(variables, clauses)
@@ -125,8 +127,8 @@ linear class Heuristic
   def addConflictClause(clause : Clause) : unit
     if (this.variableSelection == 6) then
       val literals = clause.literals
-      repeat j <- |literals| do
-        this.vsidsCounters(literals(j) / 2) = this.vsidsCounters(literals(j) / 2) + 1.0
+      repeat j <- literals.size() do
+        this.vsidsCounters(literals.at(j) / 2) = this.vsidsCounters(literals.at(j) / 2) + 1.0
       end
       this.vsidsCounter = this.vsidsCounter + 1
       if (this.vsidsCounter == this.vsidsMax) then
@@ -139,58 +141,58 @@ linear class Heuristic
   end
 
   -- TODO: pure function but relies on internal state
-  def private vsids(variables : [Variable]) : [int]
+  def private vsids(variables : LocalArray[Variable]) : (int,int)
     var cur = 0.0
     var maxI = -1
     var max = cur
     repeat i <- |this.vsidsCounters| do
       cur = this.vsidsCounters(i)
-      if ((cur >= max) && ((variables(i)).value == -1)) then
+      if ((cur >= max) && ((variables.at(i)).value == -1)) then
         max = cur
         maxI = i
       end
     end
-    [maxI, -1]
+    (maxI, -1)
   end
 
   -- TODO: pure function
-  def private forwardVariableInOrder(variables : [Variable]) : [int]
+  def private forwardVariableInOrder(variables : LocalArray[Variable]) : (int,int)
     var index = -1
     var loop = true
     var i = 0
-    val iLimit = |variables|
+    val iLimit = variables.size()
     val literal = -1
     while (loop && (i < iLimit)) do
-      val current = variables(i)
+      val current = variables.at(i)
       if (current.value == -1) then
         loop  = false
         index = i
       end
       i = i + 1
     end
-    [index, literal]
+    (index, literal)
   end
 
   -- TODO: pure function
-  def private backwardsVariableInOrder(variables : [Variable]) : [int]
+  def private backwardsVariableInOrder(variables : LocalArray[Variable]) : (int,int)
     var index = -1
     var loop = true
-    var i = |variables| - 1
+    var i = variables.size() - 1
     val iLimit = 0
     val literal = -1
     while (loop && (i >= iLimit)) do
-      val current = variables(i)
+      val current = variables.at(i)
       if(current.value == -1) then
         loop  = false
         index = i
       end
       i = i - 1
     end
-    [index, literal]
+    (index, literal)
   end
 
   -- TODO: pure function
-  def private backwardsLiteralInOrder(variables : [Variable], clauses : Vector[Clause]) : [int]
+  def private backwardsLiteralInOrder(variables : LocalArray[Variable], clauses : Vector[Clause]) : (int,int)
     var index = -1
     var loop = true
     var i = clauses.size() - 1
@@ -199,12 +201,12 @@ linear class Heuristic
     while (loop && (i >= iLimit)) do
       val clause = clauses.at(i)
       val literals = clause.literals
-      var j = |literals| - 1
+      var j = literals.size() - 1
       val jLimit = 0
       while (loop && (j >= jLimit)) do
-        literal = literals(j)
+        literal = literals.at(j)
         index = literalToVarIndex(literal)
-        val vara = variables(index)
+        val vara = variables.at(index)
         if (vara.value == -1) then
           loop = false
         end
@@ -212,11 +214,11 @@ linear class Heuristic
       end
       i = i - 1
     end
-    [index, literal]
+    (index, literal)
   end
 
   -- TODO: Pure function, doesn't cause mutation
-  def private forwardLiteralInOrder(variables : [Variable], clauses : Vector[Clause]) : [int]
+  def private forwardLiteralInOrder(variables : LocalArray[Variable], clauses : Vector[Clause]) : (int,int)
     var index = -1
     var loop = true
     var i = 0
@@ -226,11 +228,11 @@ linear class Heuristic
       val clause = clauses.at(i)
       val literals = clause.literals
       var j = 0
-      val jLimit = |literals|
+      val jLimit = literals.size()
       while (loop && (j < jLimit)) do
-        literal = literals(j)
+        literal = literals.at(j)
         index = literalToVarIndex(literal)
-        val vara = variables(index)
+        val vara = variables.at(index)
         if (vara.value == -1) then
           loop = false
         end
@@ -238,14 +240,14 @@ linear class Heuristic
       end
       i = i + 1
     end
-    [index, literal]
+    (index, literal)
   end
 
   -- TODO: pure function
-  def private nUnassignedLiterals(clause : Clause, variables : [Variable]) : int
+  def private nUnassignedLiterals(clause : Clause, variables : LocalArray[Variable]) : int
     var nUnassigned = 0
-    repeat i <- |clause.literals| do
-      if((variables(literalToVarIndex(clause.literals(i)))).value == -1) then
+    repeat i <- clause.literals.size() do
+      if((variables.at(literalToVarIndex(clause.literals.at(i)))).value == -1) then
         nUnassigned = nUnassigned + 1
       end
     end
@@ -253,28 +255,28 @@ linear class Heuristic
   end
 
   -- TODO: pure function
-  def private getUnassignedVariable(clause : Clause, variables : [Variable]) : [int]
+  def private getUnassignedVariable(clause : Clause, variables : LocalArray[Variable]) : (int,int)
     var index = 0
     var l = 0
     var shouldBreak = false
     var i = 0
-    while ((i < |clause.literals|) && (shouldBreak == false)) do
-      index = literalToVarIndex(clause.literals(i))
-      if((variables(index)).value == -1) then
-        l = clause.literals(i)
+    while ((i < clause.literals.size()) && (shouldBreak == false)) do
+      index = literalToVarIndex(clause.literals.at(i))
+      if((variables.at(index)).value == -1) then
+        l = clause.literals.at(i)
         shouldBreak = true
       end
       i = i + 1
-      if(i == |clause.literals|) then
+      if (i == clause.literals.size()) then
         shouldBreak = true
       end
     end
-    [index,l]
+    (index,l)
   end
 
   -- TODO: pure function when `this.nUnassignedLiterals(clauses.at(i),variables)`
   --       is extracted into its own function -- this method is also pure.
-  def private largestUnassignedClause(variables : [Variable], clauses : Vector[Clause]) : [int]
+  def private largestUnassignedClause(variables : LocalArray[Variable], clauses : Vector[Clause]) : (int,int)
     var i = 0
     val iLimit = clauses.size()
     var final_clause = Nothing : Maybe[Clause]
@@ -290,15 +292,13 @@ linear class Heuristic
       i = i + 1
     end
 
-    literal = this.getUnassignedVariable(unjust(final_clause),variables)(1)
-    index = this.getUnassignedVariable(unjust(final_clause),variables)(0)
-    [index, literal]
+    this.getUnassignedVariable(unjust(final_clause),variables)
   end
 
   -- TODO: pure function when `this.nUnassignedLiterals(clauses.at(i),variables)` et al
   --       are extracted into their own function -- the methods that call on `this.XXX`
   --       are all pure, i.e. depend only on their inputs
-  def private smallestUnassignedClause(variables : [Variable], clauses : Vector[Clause]) : [int]
+  def private smallestUnassignedClause(variables : LocalArray[Variable], clauses : Vector[Clause]) : (int,int)
     var i = 0
     val iLimit = clauses.size()
     var final_clause = Nothing : Maybe[Clause]
@@ -314,8 +314,6 @@ linear class Heuristic
       i = i + 1
     end
 
-    literal = this.getUnassignedVariable(unjust(final_clause),variables)(1)
-    index = this.getUnassignedVariable(unjust(final_clause),variables)(0)
-    [index, literal]
+    this.getUnassignedVariable(unjust(final_clause),variables)
   end
 end

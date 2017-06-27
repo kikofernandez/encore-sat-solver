@@ -2,6 +2,7 @@ module Parser
 
 import VVector
 import Clause
+import Array
 
 EMBED
 #include <stdio.h>
@@ -140,11 +141,11 @@ local class Parser
 
     repeat i <- n_clauses do
       val variables_in_clause = EMBED (int) get_clause_size(#{i}); END
-      val clause = new [int](variables_in_clause)
+      var clause = new Array[int](variables_in_clause)
       repeat j <- variables_in_clause  do
-        clause(j) = EMBED (int) get_literal(#{i},#{j}); END
+        clause.set(j, EMBED (int) get_literal(#{i},#{j}); END)
       end
-      clauses.push(new Clause(clause))
+      clauses.push(new Clause(consume clause))
     end
     this.nvariables = n_variables
     this.clauses = consume clauses

@@ -66,7 +66,7 @@ active class Solver
         val assignments = get(this.cdcl!getAssignments())
         val nSetVars = get(this.cdcl!getSetVars())
         assignments.toString()
-        println("Number of own conflicts: {}, number of received conflicts {}", conflicts(0), conflicts(1))
+        println("Number of own conflicts: {}, number of received conflicts {}", conflicts.0, conflicts.1)
         println("")
       else
         println("Problem found unsatisfiable by solver {}", this.solverId)

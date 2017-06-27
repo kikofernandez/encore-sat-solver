@@ -1,6 +1,7 @@
 module Vector
 
 import Array
+import LocalArray
 
 local class Vector[t]
 -- private attributes
@@ -83,14 +84,22 @@ local class Vector[t]
     consume newArray
   end
 
-  def toArray() : [t]
-    var newArray = new [t](this.nElements)
+  def toArray() : Array[t]
+    var newArray = new Array[t](this.nElements)
     repeat i <- this.nElements do
-      newArray(i) = this.array(i)
+      newArray.set(i, this.array(i))
+    end
+    consume newArray
+  end
+
+  def toLocalArray() : LocalArray[t]
+    var newArray = new LocalArray[t](this.nElements)
+    repeat i <- this.nElements do
+      newArray.set(i, this.array(i))
     end
     newArray
   end
-
+  
   -- DEBUG method
   def toString() : unit
     println("Vector: ")

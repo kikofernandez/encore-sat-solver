@@ -108,7 +108,7 @@ active class Main
       -- TODO: not sure what this does?
       -- Why does a clause has an array of numbers?
       while (k < kLimit) do
-        exists.set(clause.literals(k)/2,  true)
+        exists.set(clause.literals.at(k)/2,  true)
         k = k + 1
       end
       j = j + 1

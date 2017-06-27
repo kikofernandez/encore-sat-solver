@@ -9,6 +9,7 @@ import Assignments
 import Heuristic
 import ImplicationGraph
 import Array
+import LocalArray
 
 active class CDCL
 -- private attributes
@@ -32,8 +33,8 @@ active class CDCL
     this.heuristics.addConflictClause(conflictClause)
   end
 
-  def getAllConflicts() : [int]
-    [this.nConflicts, this.nReceivedConflicts]
+  def getAllConflicts() : (int,int)
+    (this.nConflicts, this.nReceivedConflicts)
   end
 
   def init(clauses : RVector[Clause], nVars : int, varsToAssign : RArray[int], var heuristics : Heuristic, solverId : int) : unit
@@ -95,8 +96,8 @@ active class CDCL
         done = true
       else
         val indexAndLiteral = this.heuristics.getVariableSelection(this.assignments.getVariables(), this.instance.clauses)
-        val varIndex = indexAndLiteral(0)
-        val value = this.heuristics.getValueSelection(indexAndLiteral(1))
+        val varIndex = indexAndLiteral.0
+        val value = this.heuristics.getValueSelection(indexAndLiteral.1)
         this.dL = this.dL + 1
         this.assignments.guessVariable(varIndex, value, this.dL, false)
       end
@@ -124,10 +125,10 @@ active class CDCL
     val variables = this.assignments.variables
     var error = false
     var i = 0
-    var iLimit = |variables|
+    var iLimit = variables.size()
     while (not error && (i < iLimit)) do
-      val var1 = variables(i)
-      val var2 = variables(i+1)
+      val var1 = variables.at(i)
+      val var2 = variables.at(i+1)
       if ((var1.value == -1) || (var2.value == -1) || (var1.value != var2.value)) then
         error = true
       end
@@ -140,11 +141,11 @@ active class CDCL
       val literals = this.instance.clauses.at(i).literals
       var satisfied = false
       var j = 0
-      val jLimit = |literals|
+      val jLimit = literals.size()
       while(not error && (j < jLimit)) do
-        val literal = literals(j)
+        val literal = literals.at(j)
         val index = literalToVarIndex(literal)
-        val vara = variables(index)
+        val vara = variables.at(index)
         if ((literal%2+vara.value == 1)) then
           satisfied = true
         end
@@ -174,8 +175,8 @@ active class CDCL
         j = j - 1
       end
     end
-    repeat i <- |variables| do
-      val vara = variables(i)
+    repeat i <- variables.size() do
+      val vara = variables.at(i)
       if (vara.dL > dL) then
         this.assignments.resetVar(i)
       end
@@ -212,13 +213,13 @@ active class CDCL
         while (noConflict && (i < iLimit) && (not didPropagate)) do
           val clause = this.instance.clauses.at(i)
           var literalToProp = -1
-          val unitClauseV = new Vector[int](|clause.literals|-1)
+          val unitClauseV = new Vector[int](clause.literals.size())
           var j = 0
-          val jLimit = |clause.literals|
+          val jLimit = clause.literals.size()
           var loop = true
           while (loop && (j < jLimit)) do
-            val literal = clause.literals(j)
-            val vara = variables(literal)
+            val literal = clause.literals.at(j)
+            val vara = variables.at(literal)
             if (vara.value == -1) then
               if (literalToProp == -1) then
                 literalToProp = literal
@@ -268,19 +269,19 @@ active class CDCL
     this.instance.addClause(conflictClause)
     this.heuristics.addConflictClause(conflictClause)
     this.latestConflictClause = conflictClause
-    var vara = conflictClause.literals(0)
+    var vara = conflictClause.literals.at(0)
     if (vara % 2 == 0) then
       vara = vara + 1
     else
       vara = vara - 1
     end
-    if ((|conflictClause.literals| == 1) && ((this.assignments.variables(vara)).setByBranching)) then
-      backtrackDL = (this.assignments.variables(vara)).dL
+    if ((conflictClause.literals.size() == 1) && ((this.assignments.variables.at(vara)).setByBranching)) then
+      backtrackDL = (this.assignments.variables.at(vara)).dL
     else
-      repeat i <- |conflictClause.literals| do
+      repeat i <- conflictClause.literals.size() do
         val variables = this.assignments.getVariables()
-        val literal = conflictClause.literals(i)
-        val variable = variables(literalToVarIndex(literal))
+        val literal = conflictClause.literals.at(i)
+        val variable = variables.at(literalToVarIndex(literal))
         if ((variable.dL > backtrackDL) && (variable.dL != dL)) then
           backtrackDL = variable.dL
         end
@@ -298,14 +299,14 @@ active class CDCL
     while (stack.size() > 0) do
       val varIndex = stack.pop()
       val implications = implicationGraph(varIndex)
-      val vara = variables(varIndex)
+      val vara = variables.at(varIndex)
       if (not vara.visited) then
         vara.visited = true
         repeat i <- implications.size() do
           val implication = implications.at(i)
           val unitClause = implication.unitClause
-          repeat j <- |unitClause.literals| do
-            val literal = unitClause.literals(j)
+          repeat j <- unitClause.literals.size() do
+            val literal = unitClause.literals.at(j)
             val imp = implicationGraph(literalToVarIndex(literal))
             if (imp.size() == 0) then
               var unique = true
@@ -327,8 +328,8 @@ active class CDCL
         end
       end
     end
-    repeat i <- |variables| do
-      val vara = variables(i)
+    repeat i <- variables.size() do
+      val vara = variables.at(i)
       vara.visited = false
     end
     toBeConflictClause

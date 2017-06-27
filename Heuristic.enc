@@ -3,7 +3,7 @@ module Heuristic
 import Util
 import Assignments
 import Clause
-import Vector
+import VVector
 
 
 EMBED
@@ -32,7 +32,7 @@ linear class Heuristic
 
   var vsidsCounter : int
 
-  def init(valueSelection : int, variableSelection : int, nVars : int, clauses : Vector[Clause]) : unit
+  def init(valueSelection : int, variableSelection : int, nVars : int, clauses : RVector[Clause]) : unit
     this.variableSelection = variableSelection
     this.valueSelection = valueSelection
     if(((this.variableSelection > 1) && (this.variableSelection < 4)) || (this.variableSelection == 6)) then
@@ -55,7 +55,7 @@ linear class Heuristic
     end
   end
 
-  def getVariableSelection(variables : [Variable], clauses : Vector[Clause]) : [int]
+  def getVariableSelection(variables : [Variable], clauses : RVector[Clause]) : [int]
     match this.variableSelection with
       {- Literal Forward -}
       case 0 => this.forwardLiteralInOrder(variables, clauses)
@@ -189,7 +189,7 @@ linear class Heuristic
   end
 
   -- TODO: pure function
-  def backwardsLiteralInOrder(variables : [Variable], clauses : Vector[Clause]) : [int]
+  def backwardsLiteralInOrder(variables : [Variable], clauses : RVector[Clause]) : [int]
     var index = -1
     var loop = true
     var i = clauses.size() - 1
@@ -215,7 +215,7 @@ linear class Heuristic
   end
 
   -- TODO: Pure function, doesn't cause mutation
-  def forwardLiteralInOrder(variables : [Variable], clauses : Vector[Clause]) : [int]
+  def forwardLiteralInOrder(variables : [Variable], clauses : RVector[Clause]) : [int]
     var index = -1
     var loop = true
     var i = 0
@@ -273,7 +273,7 @@ linear class Heuristic
 
   -- TODO: pure function when `this.nUnassignedLiterals(clauses.at(i),variables)`
   --       is extracted into its own function -- this method is also pure.
-  def largestUnassignedClause(variables : [Variable], clauses : Vector[Clause]) : [int]
+  def largestUnassignedClause(variables : [Variable], clauses : RVector[Clause]) : [int]
     var i = 0
     val iLimit = clauses.size()
     var final_clause = Nothing : Maybe[Clause]
@@ -297,7 +297,7 @@ linear class Heuristic
   -- TODO: pure function when `this.nUnassignedLiterals(clauses.at(i),variables)` et al
   --       are extracted into their own function -- the methods that call on `this.XXX`
   --       are all pure, i.e. depend only on their inputs
-  def smallestUnassignedClause(variables : [Variable], clauses : Vector[Clause]) : [int]
+  def smallestUnassignedClause(variables : [Variable], clauses : RVector[Clause]) : [int]
     var i = 0
     val iLimit = clauses.size()
     var final_clause = Nothing : Maybe[Clause]

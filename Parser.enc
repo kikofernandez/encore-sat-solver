@@ -1,6 +1,6 @@
 module Parser
 
-import Vector
+import VVector
 import Clause
 
 EMBED
@@ -123,7 +123,7 @@ BODY
 END
 
 local class Parser
-  var clauses : Vector[Clause]
+  var clauses : VVector[Clause]
   var nvariables : int
   val file : String
 
@@ -135,7 +135,7 @@ local class Parser
     val newfile = this.file.data
     val filecontent = EMBED (int) read_file(#{newfile}); END
     val n_clauses = EMBED (int) get_n_clauses(); END
-    val clauses = new Vector[Clause](1)
+    val clauses = new VVector[Clause](1)
     val n_variables = EMBED (int) get_n_variables(); END
 
     repeat i <- n_clauses do
@@ -151,7 +151,7 @@ local class Parser
     return this
   end
 
-  def getClauses() : Vector[Clause]
+  def getClauses() : VVector[Clause]
     this.clauses.clone()
   end
 

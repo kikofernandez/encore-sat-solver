@@ -2,6 +2,7 @@ module CDCL
 
 import Util
 import Vector
+import VVector
 import Clause
 import Instance
 import Assignments
@@ -35,7 +36,7 @@ active class CDCL
     [this.nConflicts, this.nRecievedConflicts]
   end
 
-  def init(clauses : Vector[Clause], nVars : int, varsToAssign : RArray[int], var heuristics : Heuristic, solverId : int) : unit
+  def init(clauses : VVector[Clause], nVars : int, varsToAssign : RArray[int], var heuristics : Heuristic, solverId : int) : unit
     this.assignments = new Assignments(nVars*2, varsToAssign)
     this.originalNOfClauses = clauses.size()
     this.instance = new Instance(clauses, nVars*2)
@@ -61,9 +62,9 @@ active class CDCL
   --   EMBED (unit) fgetc(stdin); END
   -- end
 
-  def getInstance() : Instance
-    this.instance
-  end
+  -- def getInstance() : Instance
+  --   this.instance
+  -- end
 
   def getAssignments() : FinalAssignment
     this.assignments.final()

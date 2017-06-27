@@ -1,12 +1,14 @@
 module Solver
 
 import Vector
+import VVector
 import Clause
 import Main
 import Heuristic
 import CDCL
 import Assignments
 import Util
+import Array
 
 active class Solver
   val n_vars : int
@@ -30,7 +32,7 @@ active class Solver
   var restartCounter : int
 
   -- TODO: varsToAssign is a read-only array
-  def init(clauses : Vector[Clause], n_vars : int, varsToAssign : [int], heuristic : Heuristic, master : Main, solverId : int, ccLength : int, iterations : int, ccNumber : int, ccM : int, restart : int) : unit
+  def init(clauses : VVector[Clause], n_vars : int, varsToAssign : RArray[int], var heuristic : Heuristic, master : Main, solverId : int, ccLength : int, iterations : int, ccNumber : int, ccM : int, restart : int) : unit
     this.n_vars = n_vars
     this.heuristic = consume heuristic
     this.master = master

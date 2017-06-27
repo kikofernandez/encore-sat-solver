@@ -74,15 +74,15 @@ local class Vector[t]
     this.array(this.nElements)
   end
 
-{-
-  def toArray() : Array[t]
+
+  def toRArray() : RArray[t]
     var newArray = new Array[t](this.nElements)
     repeat i <- this.nElements do
       newArray.set(i, this.array(i))
     end
     consume newArray
   end
--}
+
   def toArray() : [t]
     var newArray = new [t](this.nElements)
     repeat i <- this.nElements do

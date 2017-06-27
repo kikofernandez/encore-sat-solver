@@ -1,12 +1,14 @@
 module Main
 
 import Vector
+import VVector
 import Clause
 import Parser
 import Solver
 import Heuristic
 import Util
 import LinearQueue
+import Array
 
 fun unjustH(h : Maybe[Heuristic]) : Heuristic
   match h with
@@ -91,8 +93,8 @@ active class Main
     sum
   end
 
-  def preProcess(clauses : Vector[Clause], nVars : int) : [int]
-    val exists = new [bool](nVars)
+  def preProcess(clauses : RVector[Clause], nVars : int) : RArray[int]
+    val exists = new Array[bool](nVars)
 
     -- Vectors take an initial size and expand dynamically
     val varsToAssign = new Vector[int](10)
@@ -116,10 +118,10 @@ active class Main
         varsToAssign.push(i)
       end
     end
-    varsToAssign.toArray()
+    varsToAssign.toRArray()
   end
 
-  def private setupHeuristics(heuristics: LinearQueue[Heuristic], clauses: Vector[Clause], val nVars: int): unit
+  def private setupHeuristics(heuristics: LinearQueue[Heuristic], clauses: RVector[Clause], val nVars: int): unit
     heuristics.enqueue(Just(new Heuristic(3,6, nVars, clauses))) --VSIDS
     heuristics.enqueue(Just(new Heuristic(0,0, nVars, clauses))) --Literal false literal forward
     heuristics.enqueue(Just(new Heuristic(0,5, nVars, clauses))) --Literal false smallest

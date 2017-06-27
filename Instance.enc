@@ -2,16 +2,16 @@ module Instance
 
 import Clause
 import ImplicationGraph
-import Vector
+import VVector
 
 local class Instance
 -- public attributes
   val nVars : int
   val implicationGraph : ImplicationGraph
 -- private attributes
-  val clauses : Vector[Clause]
+  val clauses : VVector[Clause]
 
-  def init(clauses_ : Vector[Clause], nVars_ : int) : unit
+  def init(clauses_ : VVector[Clause], nVars_ : int) : unit
     this.clauses = clauses_
     this.nVars = nVars_
     this.implicationGraph = new ImplicationGraph(this.nVars/2)

@@ -2,7 +2,7 @@ module VVector
 
 import Array
 
-read trait VRead[t]
+read trait RVector[t]
   require val arraySize : int
   require val nElements : int
   require val array : [t]
@@ -49,7 +49,7 @@ read trait VRead[t]
   end
 end
 
-linear trait VWrite[t]
+linear trait WVector[t]
   require var arraySize : int
   require var nElements : int
   require var array : [t]
@@ -107,7 +107,7 @@ linear trait VWrite[t]
 end
 
 
-class VVector[t] : VRead[t] + VWrite[t]
+class VVector[t] : RVector[t] + WVector[t]
 -- private attributes
   var arraySize : int
   var nElements : int

@@ -13,7 +13,7 @@ class CDCL
   val heuristics : Heuristic
   var assignments : Assignments
   val instance : Instance
-  var dL : int
+  var dL : int -- TODO: what is a DL
   var nConflicts : int
   var nRecievedConflicts : int
   val originalNOfClauses : int
@@ -34,6 +34,7 @@ class CDCL
     [this.nConflicts, this.nRecievedConflicts]
   end
 
+  -- TODO: varsToAssign is a read-only array
   def init(clauses : Vector[Clause], nVars : int, varsToAssign : [int], heuristics : Heuristic, solverId : int) : unit
     this.assignments = new Assignments(nVars*2, varsToAssign)
     this.originalNOfClauses = clauses.size()
@@ -188,7 +189,7 @@ class CDCL
   end
 
   -- returns false if conflict is found, otherwise true
-  def unitPropagation(dL : int) : bool
+  def private unitPropagation(dL : int) : bool
     WAMP("In CDCL.unitPropagation()")
     val literalsToAssign = new Vector[int](10)
     var popIndex = 0

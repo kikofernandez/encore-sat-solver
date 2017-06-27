@@ -41,7 +41,7 @@ local class Assignments
       this.guessVariable(varsToAssign.at(i), 1, -1, false)
     end
   end
-  
+
 -- public methods
   def assignVariable(index :  int, value : int, dL : int, setByBranching : bool) : unit
     var vara = this.variables(index)
@@ -111,6 +111,7 @@ local class Assignments
   end
 
   def guessVariable(index :  int, value : int, dL : int, setByBranching : bool) : unit
+    -- TODO: precondition: |this.variables| >= (index*2)+1
     val index1 = index*2
     val index2 = index1+1
     val var1 = this.variables(index1)

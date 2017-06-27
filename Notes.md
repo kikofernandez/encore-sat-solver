@@ -48,3 +48,36 @@
   fun myFun(y: T + S): unit
     ...
   end
+
+- It would be great if traits can be without mode and I add the mode as I go by.
+  I guess there is some support for it... I believe that read modes need to be
+  explictily declared. same for linear ones.
+
+- The following example is a feature or a bug:
+
+  local class C : R
+    var x : String
+    def foo() : unit
+  println("foo")
+  end
+  end
+
+  read trait R
+    require val x : String
+  end
+
+  active class A
+    val c : C
+    def init(c: C): unit
+      this.c = c
+    end
+  end
+
+  active class Main
+    var i: int
+
+    def main(args : [String]) : unit
+      val c = new C()
+      this.i
+    end
+  end

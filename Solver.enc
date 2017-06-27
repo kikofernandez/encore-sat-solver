@@ -29,11 +29,12 @@ active class Solver
   var ccCounter : int
   var restartCounter : int
 
+  -- TODO: varsToAssign is a read-only array
   def init(clauses : Vector[Clause], n_vars : int, varsToAssign : [int], heuristic : Heuristic, master : Main, solverId : int, ccLength : int, iterations : int, ccNumber : int, ccM : int, restart : int) : unit
     this.n_vars = n_vars
     this.heuristic = heuristic
     this.master = master
-    this.cdcl = new CDCL(this.clauses, this.n_vars, varsToAssign, this.heuristic, solverId)
+    this.cdcl = new CDCL(clauses, this.n_vars, varsToAssign, this.heuristic, solverId)
     this.solverId = solverId
     this.ccLength = ccLength
     this.iterations = iterations
@@ -85,6 +86,7 @@ active class Solver
     var shouldEnd = false
     while (i < this.iterations) do
       WAMP("Iterating")
+      -- TODO: bad design. blocking in a while loop...
       if (solveable && not done && not get(this.master!getIsSolved())) then
         val res = get(this.cdcl!solve())
         solveable = res.0

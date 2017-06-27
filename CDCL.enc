@@ -64,8 +64,8 @@ class CDCL
     this.instance
   end
 
-  def getAssignments() : Assignments
-    this.assignments
+  def getAssignments() : FinalAssignment
+    this.assignments.final()
   end
 
 -- public methods

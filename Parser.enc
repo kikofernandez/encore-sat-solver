@@ -122,7 +122,7 @@ BODY
     }
 END
 
-passive class Parser
+local class Parser
   var clauses : Vector[Clause]
   var nvariables : int
   val file : String
@@ -141,7 +141,9 @@ passive class Parser
     repeat i <- n_clauses do
       val variables_in_clause = EMBED (int) get_clause_size(#{i}); END
       val clause = new [int](variables_in_clause)
-      this.Helper(variables_in_clause, clause, i)
+      repeat j <- variables_in_clause  do
+        clause(j) = EMBED (int) get_literal(#{i},#{j}); END
+      end
       clauses.push(new Clause(clause))
     end
     this.nvariables = n_variables
@@ -155,11 +157,5 @@ passive class Parser
 
   def getnVariables() : int
     this.nvariables
-  end
-
-  def Helper(variables_in_clause : int, clause : [int], i :int) : unit
-    repeat j <- variables_in_clause  do
-      clause(j) = EMBED (int) get_literal(#{i},#{j}); END
-    end
   end
 end

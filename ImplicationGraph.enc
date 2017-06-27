@@ -33,7 +33,7 @@ class Implication : Local + TImplication
   end
 end
 
-passive class ImplicationGraph
+local class ImplicationGraph
 -- private attributes
   val implicationGraph : [Vector[Implication]]
   var latestConflictIndex : int

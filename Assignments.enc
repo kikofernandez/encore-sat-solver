@@ -2,8 +2,9 @@ module Assignments
 
 import Vector
 import Clause
+import Array
 
-passive class Variable
+local class Variable
 -- public attributes
   var value : int
   var dL : int
@@ -24,20 +25,20 @@ passive class Variable
   end
 end
 
-passive class Assignments
+local class Assignments
 -- public attributes
   var nSetVars : int
 -- private attributes
   val variables : [Variable]
 
-  def init(n : int, varsToAssign : [int]) : unit
+  def init(n : int, varsToAssign : RArray[int]) : unit
     this.variables = new [Variable](n)
     repeat i <- n do
       this.variables(i) = new Variable()
     end
     this.nSetVars = 0
-    repeat i <- |varsToAssign| do
-      this.guessVariable(varsToAssign(i), 1, -1, false)
+    for i <- [0 .. varsToAssign.size() - 1] do
+      this.guessVariable(varsToAssign.at(i), 1, -1, false)
     end
   end
   
@@ -56,6 +57,7 @@ passive class Assignments
     this.nSetVars = this.nSetVars + 1
   end
 
+  -- TODO: copy not using intermediate vector
   def getVariables() : [Variable]
     val newVars = new Vector[Variable]((|this.variables|)/2)
     repeat i <- |this.variables| do
@@ -140,6 +142,7 @@ passive class Assignments
     indexes.toArray()
   end
 
+  -- TODO: convert to straight array copy
   def toArray() : [int]
     val variables = new Vector[int](|this.variables|)
     repeat i <- |this.variables| do
@@ -149,6 +152,7 @@ passive class Assignments
     variables.toArray()
   end
 
+{- TODO: remove if possible
   def toString() : unit
     print("Assignments: ")
     val variables = this.getVariables()
@@ -165,6 +169,11 @@ passive class Assignments
       end
     end
     println("")
+  end
+-}
+
+  def final() : FinalAssignment
+    new FinalAssignment(this.variables)
   end
 
   def convertClauseToConflictClause(clause : Clause) : Clause
@@ -187,5 +196,32 @@ passive class Assignments
       conflictLiterals.push(literal)
     end
     new Clause(conflictLiterals.toArray())
+  end
+end
+
+read class FinalAssignment
+  val assignment : [int]
+
+  def init(vars : [Variable]) : unit
+    this.assignment = new [int](|vars|)
+    repeat i <- |vars| do
+      this.assignment(i) = vars(i).value
+    end
+  end
+
+  def toString() : unit
+    print("Assignments: ")
+    repeat i <- |this.assignment| do
+      if (this.assignment(i) == 0) then
+        print("{}","-")
+      else if (this.assignment(i) == -1) then
+        print("{}","UNSAT")
+      end
+      print("x{} ",i+1)
+      if (((i+1)*2)%5 == 0) then
+        println("")
+      end
+    end
+    println("")
   end
 end

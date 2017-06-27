@@ -1,3 +1,5 @@
+module Main
+
 import Vector
 import Clause
 import Parser

@@ -22,3 +22,11 @@
 - The approach Kiko and Dave took was too look at the data passed between actors and to see what was done with it before and after it was passed and to look at whether it was aliased (and where) and to see whether the methods used were limited (was there shared mutable state, was there linearity)
 
 - Inspection of smaller classes (and their usage) often lead to identifying whether they were immutable, local, or subordinate.
+
+- Array type syntax [int] makes it hard to find uses of array as they are confused with type parameter Foo[int]
+
+- Not being able to separate Array type into Read and Write traits makes it harder to share them safely.
+
+- One often needs to create a new class to contain the results to be passed back from an actor. The actor then copies (parts of) its working data structure into a new instance of that class. It needs to be a new class because the mode of the working class and the one passed must be different
+
+- Linear is painful to work with. Eventually, we tried to avoid it at all costs.

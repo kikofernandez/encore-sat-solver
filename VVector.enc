@@ -1,5 +1,7 @@
 module VVector
 
+import Array
+
 read trait VRead[t]
   require val arraySize : int
   require val nElements : int
@@ -25,12 +27,12 @@ read trait VRead[t]
     this.nElements
   end
   
-  def toArray() : [t]
-    val newArray = new [t](this.nElements)
+  def toArray() : Array[t]
+    var newArray = new Array[t](this.nElements)
     repeat i <- this.nElements do
-      newArray(i) = this.array(i)
+      newArray.set(i, this.array(i))
     end
-    newArray
+    consume newArray
   end
   
   -- DEBUG method

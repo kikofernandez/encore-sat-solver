@@ -1,6 +1,8 @@
 module Vector
 
-passive class Vector[t]
+import Array
+
+local class Vector[t]
 -- private attributes
   var arraySize : int
   var nElements : int
@@ -72,8 +74,17 @@ passive class Vector[t]
     this.array(this.nElements)
   end
 
+{-
+  def toArray() : Array[t]
+    var newArray = new Array[t](this.nElements)
+    repeat i <- this.nElements do
+      newArray.set(i, this.array(i))
+    end
+    consume newArray
+  end
+-}
   def toArray() : [t]
-    val newArray = new [t](this.nElements)
+    var newArray = new [t](this.nElements)
     repeat i <- this.nElements do
       newArray(i) = this.array(i)
     end

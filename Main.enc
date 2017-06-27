@@ -107,14 +107,14 @@ active class Main
       -- TODO: not sure what this does?
       -- Why does a clause has an array of numbers?
       while (k < kLimit) do
-        exists(clause.literals(k)/2) = true
+        exists.set(clause.literals(k)/2,  true)
         k = k + 1
       end
       j = j + 1
     end
 
-    repeat i <- |exists| do
-      if (not exists(i)) then
+    repeat i <- exists.size() do
+      if (not exists.at(i)) then
         varsToAssign.push(i)
       end
     end

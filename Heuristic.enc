@@ -76,7 +76,7 @@ linear class Heuristic
   end
 
 
-  def private valueSelectionToString() : unit
+  def valueSelectionToString() : unit
     match this.valueSelection with
       {- Value heuristic is always set literal false -}
       case 0 => println("Value heuristic: Always set literal false")
@@ -92,7 +92,7 @@ linear class Heuristic
   end
 
   -- TODO: debug method
-  def private variableSelectionToString() : unit
+  def variableSelectionToString() : unit
     match this.variableSelection with
       case 0 => println("Variable heuristic: Forward in order literal selection")
       case 1 =>  println("Variable heuristic: Backwards in order literal selection")

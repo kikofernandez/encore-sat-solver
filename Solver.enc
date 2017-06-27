@@ -1,6 +1,5 @@
 module Solver
 
-import Vector
 import VVector
 import Clause
 import Main

@@ -31,14 +31,15 @@ local class LinearQueue[linear t]
   end
 
   def enqueue(var data : Maybe[t]) : unit
-    val old_tail = unjust(this.tail)
     val tail = new Link[t]()
     tail.data = consume data
     tail.next = Nothing : Maybe[Link[t]]
-    this.tail = Just(tail)
     if this.is_empty() then
+      this.tail = Just(tail)
       this.head = this.tail
     else
+      val old_tail = unjust(this.tail)
+      this.tail = Just(tail)
       old_tail.next = this.tail
     end
     this.no_elements += 1

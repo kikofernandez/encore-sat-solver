@@ -11,7 +11,7 @@ import LinearQueue
 import Array
 
 fun unjustH(var h : Maybe[Heuristic]) : Heuristic
-  EMBED (Heuristic) #{h}.val; END
+  EMBED (Heuristic) #{h}->val.p; END
 --  match consume h with
 --    case Just(ice) => ice
 --    case Nothing => abort("There is no justice")

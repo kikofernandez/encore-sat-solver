@@ -32,7 +32,7 @@ active class Solver
   -- TODO: varsToAssign is a read-only array
   def init(clauses : Vector[Clause], n_vars : int, varsToAssign : [int], heuristic : Heuristic, master : Main, solverId : int, ccLength : int, iterations : int, ccNumber : int, ccM : int, restart : int) : unit
     this.n_vars = n_vars
-    this.heuristic = heuristic
+    this.heuristic = consume heuristic
     this.master = master
     this.cdcl = new CDCL(clauses, this.n_vars, varsToAssign, this.heuristic, solverId)
     this.solverId = solverId

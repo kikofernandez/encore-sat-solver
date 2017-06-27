@@ -102,8 +102,6 @@ BODY
             }
             current_clause++;
         }
-        // TODO: allocate memory using encore_alloc instead of malloc.
-        // TODO: Free memory
         return 1;
     }
 

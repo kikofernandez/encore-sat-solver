@@ -7,8 +7,9 @@ import Instance
 import Assignments
 import Heuristic
 import ImplicationGraph
+import Array
 
-class CDCL
+active class CDCL
 -- private attributes
   val heuristics : Heuristic
   var assignments : Assignments
@@ -21,7 +22,7 @@ class CDCL
   val solverId : int
 
   val nVars : int
-  val varsToAssign : [int]
+  val varsToAssign : RArray[int]
 
 
   def addConflictClause(conflictClause : Clause) : unit
@@ -34,15 +35,14 @@ class CDCL
     [this.nConflicts, this.nRecievedConflicts]
   end
 
-  -- TODO: varsToAssign is a read-only array
-  def init(clauses : Vector[Clause], nVars : int, varsToAssign : [int], heuristics : Heuristic, solverId : int) : unit
+  def init(clauses : Vector[Clause], nVars : int, varsToAssign : RArray[int], var heuristics : Heuristic, solverId : int) : unit
     this.assignments = new Assignments(nVars*2, varsToAssign)
     this.originalNOfClauses = clauses.size()
     this.instance = new Instance(clauses, nVars*2)
     this.dL = 0
     this.nConflicts = 0
     this.nRecievedConflicts = 0
-    this.heuristics = heuristics
+    this.heuristics = consume heuristics
     this.solverId = solverId
     this.nVars = nVars
     this.varsToAssign = varsToAssign

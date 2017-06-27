@@ -4,7 +4,7 @@ import Clause
 import ImplicationGraph
 import Vector
 
-subord class Instance
+local class Instance
 -- public attributes
   val nVars : int
   val implicationGraph : ImplicationGraph

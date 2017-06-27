@@ -3,17 +3,8 @@ module ImplicationGraph
 import Vector
 import Clause
 
-read trait TImplication
-  require val variableIndex : int
-  require val unitClause : Clause
-  require val dL : int
-  require val value : int
-end
 
-local trait Local
-end
-
-class Implication : Local + TImplication
+local class Implication
 -- public attributes
   val variableIndex : int
   val unitClause : Clause

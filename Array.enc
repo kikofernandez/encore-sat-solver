@@ -1,0 +1,30 @@
+
+module Array
+
+read trait RArray[t]
+  require val arr : [t]
+  
+  def at(i : int) : t
+    this.arr(i)
+  end
+  
+  def size() : int
+    |this.arr|
+  end
+end
+
+linear trait WArray[t]
+  require val arr : [t]
+  
+  def set(i : int, d : t) : unit
+    this.arr(i) = d
+  end
+end
+
+class Array[t] : RArray[t] + WArray[t]
+  val arr : [t]
+  
+  def init(size : int) : unit
+    this.arr = new[t](size)
+  end
+end

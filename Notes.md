@@ -8,20 +8,21 @@
       end
     end
 
-  But this wouldn't    
-  
+  But this wouldn't
+
     fun unjust[linear t](x : Maybe[t]) : t
       match x with
         case Just(ice) => ice
         case Nothing => abort("Cannot unjust Nothing.")
       end
     end
-    
+
 - Transitioning from non-Kappa to Kappa by just using the compiler errors and trying to fix them without understanding the program was an exercise in futility. Basically, I just pushed the error from one place to another
 
 - The approach Kiko and Dave took was too look at the data passed between actors and to see what was done with it before and after it was passed and to look at whether it was aliased (and where) and to see whether the methods used were limited (was there shared mutable state, was there linearity)
 
 - Inspection of smaller classes (and their usage) often lead to identifying whether they were immutable, local, or subordinate.
+
 
 - Array type syntax [int] makes it hard to find uses of array as they are confused with type parameter Foo[int]
 
@@ -30,3 +31,20 @@
 - One often needs to create a new class to contain the results to be passed back from an actor. The actor then copies (parts of) its working data structure into a new instance of that class. It needs to be a new class because the mode of the working class and the one passed must be different
 
 - Linear is painful to work with. Eventually, we tried to avoid it at all costs.
+
+- I would like to reify a parameter in a function by adding more restrictions to it. For instance,
+  I have a method that sends y : T to a function myFun. This function reifies the modes
+  adding the constrain that y : T is now y : T + S. This can happen with compatible modes
+
+  class X : T
+    def send(y: T): unit
+      myFun(y)
+    end
+  end
+
+  local trait S
+  end
+
+  fun myFun(y: T + S): unit
+    ...
+  end

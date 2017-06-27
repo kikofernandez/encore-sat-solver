@@ -121,13 +121,13 @@ active class CDCL
 -- private methods
   def checkCorrectness() : bool
     WAMP("In CDCL.checkCorrectness()")
-    val variables = this.assignments.variables
+    -- val variables = this.assignments.variables
     var error = false
     var i = 0
-    var iLimit = |variables|
+    var iLimit = this.assignments.variables.size()
     while (not error && (i < iLimit)) do
-      val var1 = variables(i)
-      val var2 = variables(i+1)
+      val var1 = this.assignments.variables.at(i)
+      val var2 = this.assignments.variables.at(i+1)
       if ((var1.value == -1) || (var2.value == -1) || (var1.value != var2.value)) then
         error = true
       end
@@ -135,7 +135,6 @@ active class CDCL
     end
     i = 0
     iLimit = this.instance.clauses.size()
-    val variables = this.assignments.getVariables() -- TODO: isn't this redundant??
     while (not error && (i < iLimit)) do
       val literals = this.instance.clauses.at(i).literals
       var satisfied = false
@@ -144,7 +143,7 @@ active class CDCL
       while(not error && (j < jLimit)) do
         val literal = literals(j)
         val index = literalToVarIndex(literal)
-        val vara = variables(index)
+        val vara = this.assignments.getVariables().at(index)
         if ((literal%2+vara.value == 1)) then
           satisfied = true
         end
@@ -174,8 +173,8 @@ active class CDCL
         j = j - 1
       end
     end
-    repeat i <- |variables| do
-      val vara = variables(i)
+    repeat i <- variables.size() do
+      val vara = variables.at(i)
       if (vara.dL > dL) then
         this.assignments.resetVar(i)
       end
@@ -196,7 +195,6 @@ active class CDCL
     var firstLoop = true
     var didPropagate = true -- set to true just to enter the loop at least once
     var noConflict = true
-    val variables = this.assignments.variables
     while (((popCounter > 0) || firstLoop)) do
       if (not firstLoop) then
         didPropagate = true
@@ -218,7 +216,7 @@ active class CDCL
           var loop = true
           while (loop && (j < jLimit)) do
             val literal = clause.literals(j)
-            val vara = variables(literal)
+            val vara = this.assignments.variables.at(literal)
             if (vara.value == -1) then
               if (literalToProp == -1) then
                 literalToProp = literal
@@ -274,13 +272,13 @@ active class CDCL
     else
       vara = vara - 1
     end
-    if ((|conflictClause.literals| == 1) && ((this.assignments.variables(vara)).setByBranching)) then
-      backtrackDL = (this.assignments.variables(vara)).dL
+    if ((|conflictClause.literals| == 1) && ((this.assignments.variables.at(vara)).setByBranching)) then
+      backtrackDL = (this.assignments.variables.at(vara)).dL
     else
       repeat i <- |conflictClause.literals| do
         val variables = this.assignments.getVariables()
         val literal = conflictClause.literals(i)
-        val variable = variables(literalToVarIndex(literal))
+        val variable = variables.at(literalToVarIndex(literal))
         if ((variable.dL > backtrackDL) && (variable.dL != dL)) then
           backtrackDL = variable.dL
         end
@@ -298,7 +296,7 @@ active class CDCL
     while (stack.size() > 0) do
       val varIndex = stack.pop()
       val implications = implicationGraph(varIndex)
-      val vara = variables(varIndex)
+      val vara = variables.at(varIndex)
       if (not vara.visited) then
         vara.visited = true
         repeat i <- implications.size() do
@@ -327,18 +325,18 @@ active class CDCL
         end
       end
     end
-    repeat i <- |variables| do
-      val vara = variables(i)
+    repeat i <- variables.size() do
+      val vara = variables.at(i)
       vara.visited = false
     end
     toBeConflictClause
   end
-  
+
   def variableSelectionToString() : unit
     this.heuristics.variableSelectionToString()
   end
-  
+
   def valueSelectionToString() : unit
-    this.heuristics.valueSelectionToString()  
+    this.heuristics.valueSelectionToString()
   end
 end

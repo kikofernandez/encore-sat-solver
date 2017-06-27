@@ -38,17 +38,6 @@ active class Main
       this.isSolved
   end
 
-  -- def pause() : unit
-  --   EMBED (unit) fgetc(stdin); END
-  -- end
-
-  -- def printClauses(clauses : Vector[Clause]) : unit
-  --   println("Clauses to solve")
-  --   repeat n <- clauses.size() do
-  --     clauses.at(n).toString()
-  --   end
-  -- end
-
   def charToInt(c : char) : int
     if (c == '0') then
       0

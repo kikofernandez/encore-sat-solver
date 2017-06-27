@@ -4,6 +4,7 @@ import Util
 import Assignments
 import Clause
 import VVector
+import Vector
 
 
 EMBED
@@ -55,7 +56,7 @@ linear class Heuristic
     end
   end
 
-  def getVariableSelection(variables : [Variable], clauses : RVector[Clause]) : [int]
+  def getVariableSelection(variables : [Variable], clauses : Vector[Clause]) : [int]
     match this.variableSelection with
       {- Literal Forward -}
       case 0 => this.forwardLiteralInOrder(variables, clauses)
@@ -75,7 +76,7 @@ linear class Heuristic
   end
 
 
-  def valueSelectionToString() : unit
+  def private valueSelectionToString() : unit
     match this.valueSelection with
       {- Value heuristic is always set literal false -}
       case 0 => println("Value heuristic: Always set literal false")
@@ -91,7 +92,7 @@ linear class Heuristic
   end
 
   -- TODO: debug method
-  def variableSelectionToString() : unit
+  def private variableSelectionToString() : unit
     match this.variableSelection with
       case 0 => println("Variable heuristic: Forward in order literal selection")
       case 1 =>  println("Variable heuristic: Backwards in order literal selection")
@@ -138,7 +139,7 @@ linear class Heuristic
   end
 
   -- TODO: pure function but relies on internal state
-  def vsids(variables : [Variable]) : [int]
+  def private vsids(variables : [Variable]) : [int]
     var cur = 0.0
     var maxI = -1
     var max = cur
@@ -153,7 +154,7 @@ linear class Heuristic
   end
 
   -- TODO: pure function
-  def forwardVariableInOrder(variables : [Variable]) : [int]
+  def private forwardVariableInOrder(variables : [Variable]) : [int]
     var index = -1
     var loop = true
     var i = 0
@@ -171,7 +172,7 @@ linear class Heuristic
   end
 
   -- TODO: pure function
-  def backwardsVariableInOrder(variables : [Variable]) : [int]
+  def private backwardsVariableInOrder(variables : [Variable]) : [int]
     var index = -1
     var loop = true
     var i = |variables| - 1
@@ -189,7 +190,7 @@ linear class Heuristic
   end
 
   -- TODO: pure function
-  def backwardsLiteralInOrder(variables : [Variable], clauses : RVector[Clause]) : [int]
+  def private backwardsLiteralInOrder(variables : [Variable], clauses : Vector[Clause]) : [int]
     var index = -1
     var loop = true
     var i = clauses.size() - 1
@@ -215,7 +216,7 @@ linear class Heuristic
   end
 
   -- TODO: Pure function, doesn't cause mutation
-  def forwardLiteralInOrder(variables : [Variable], clauses : RVector[Clause]) : [int]
+  def private forwardLiteralInOrder(variables : [Variable], clauses : Vector[Clause]) : [int]
     var index = -1
     var loop = true
     var i = 0
@@ -241,7 +242,7 @@ linear class Heuristic
   end
 
   -- TODO: pure function
-  def nUnassignedLiterals(clause : Clause, variables : [Variable]) : int
+  def private nUnassignedLiterals(clause : Clause, variables : [Variable]) : int
     var nUnassigned = 0
     repeat i <- |clause.literals| do
       if((variables(literalToVarIndex(clause.literals(i)))).value == -1) then
@@ -252,7 +253,7 @@ linear class Heuristic
   end
 
   -- TODO: pure function
-  def getUnassignedVariable(clause : Clause, variables : [Variable]) : [int]
+  def private getUnassignedVariable(clause : Clause, variables : [Variable]) : [int]
     var index = 0
     var l = 0
     var shouldBreak = false
@@ -273,7 +274,7 @@ linear class Heuristic
 
   -- TODO: pure function when `this.nUnassignedLiterals(clauses.at(i),variables)`
   --       is extracted into its own function -- this method is also pure.
-  def largestUnassignedClause(variables : [Variable], clauses : RVector[Clause]) : [int]
+  def private largestUnassignedClause(variables : [Variable], clauses : Vector[Clause]) : [int]
     var i = 0
     val iLimit = clauses.size()
     var final_clause = Nothing : Maybe[Clause]
@@ -297,7 +298,7 @@ linear class Heuristic
   -- TODO: pure function when `this.nUnassignedLiterals(clauses.at(i),variables)` et al
   --       are extracted into their own function -- the methods that call on `this.XXX`
   --       are all pure, i.e. depend only on their inputs
-  def smallestUnassignedClause(variables : [Variable], clauses : RVector[Clause]) : [int]
+  def private smallestUnassignedClause(variables : [Variable], clauses : Vector[Clause]) : [int]
     var i = 0
     val iLimit = clauses.size()
     var final_clause = Nothing : Maybe[Clause]

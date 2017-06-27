@@ -17,7 +17,7 @@ active class CDCL
   val instance : Instance
   var dL : int -- TODO: what is a DL
   var nConflicts : int
-  var nRecievedConflicts : int
+  var nReceivedConflicts : int
   val originalNOfClauses : int
   var latestConflictClause : Clause
   val solverId : int
@@ -28,21 +28,21 @@ active class CDCL
 
   def addConflictClause(conflictClause : Clause) : unit
     this.instance.addClause(conflictClause)
-    this.nRecievedConflicts = this.nRecievedConflicts + 1
+    this.nReceivedConflicts += 1
     this.heuristics.addConflictClause(conflictClause)
   end
 
   def getAllConflicts() : [int]
-    [this.nConflicts, this.nRecievedConflicts]
+    [this.nConflicts, this.nReceivedConflicts]
   end
 
-  def init(clauses : VVector[Clause], nVars : int, varsToAssign : RArray[int], var heuristics : Heuristic, solverId : int) : unit
+  def init(clauses : RVector[Clause], nVars : int, varsToAssign : RArray[int], var heuristics : Heuristic, solverId : int) : unit
     this.assignments = new Assignments(nVars*2, varsToAssign)
     this.originalNOfClauses = clauses.size()
     this.instance = new Instance(clauses, nVars*2)
     this.dL = 0
     this.nConflicts = 0
-    this.nRecievedConflicts = 0
+    this.nReceivedConflicts = 0
     this.heuristics = consume heuristics
     this.solverId = solverId
     this.nVars = nVars
@@ -122,10 +122,9 @@ active class CDCL
   def checkCorrectness() : bool
     WAMP("In CDCL.checkCorrectness()")
     val variables = this.assignments.variables
-    val clauses = this.instance.clauses
+    var error = false
     var i = 0
     var iLimit = |variables|
-    var error = false
     while (not error && (i < iLimit)) do
       val var1 = variables(i)
       val var2 = variables(i+1)
@@ -135,11 +134,10 @@ active class CDCL
       i = i + 2
     end
     i = 0
-    iLimit = clauses.size()
-    val variables = this.assignments.getVariables()
+    iLimit = this.instance.clauses.size()
+    val variables = this.assignments.getVariables() -- TODO: isn't this redundant??
     while (not error && (i < iLimit)) do
-      val clause = clauses.at(i)
-      val literals = clause.literals
+      val literals = this.instance.clauses.at(i).literals
       var satisfied = false
       var j = 0
       val jLimit = |literals|

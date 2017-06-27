@@ -32,7 +32,7 @@ active class Solver
   var restartCounter : int
 
   -- TODO: varsToAssign is a read-only array
-  def init(clauses : VVector[Clause], n_vars : int, varsToAssign : RArray[int], var heuristic : Heuristic, master : Main, solverId : int, ccLength : int, iterations : int, ccNumber : int, ccM : int, restart : int) : unit
+  def init(clauses : RVector[Clause], n_vars : int, varsToAssign : RArray[int], var heuristic : Heuristic, master : Main, solverId : int, ccLength : int, iterations : int, ccNumber : int, ccM : int, restart : int) : unit
     this.n_vars = n_vars
     this.heuristic = consume heuristic
     this.master = master

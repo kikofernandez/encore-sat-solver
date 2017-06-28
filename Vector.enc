@@ -16,13 +16,13 @@ local class Vector[t]
   end
 
 -- public methods
-  def clone() : Vector[t]
-    val newVector = new Vector[t](this.nElements)
-    repeat i <- this.nElements do
-      newVector.push(this.array(i))
-    end
-    newVector
-  end
+  -- def clone() : Vector[t]
+  --   val newVector = new Vector[t](this.nElements)
+  --   repeat i <- this.nElements do
+  --     newVector.push(this.array(i))
+  --   end
+  --   newVector
+  -- end
 
   def set(index : int, value : t) : unit
     if (not this.inBounds(index)) then
@@ -99,7 +99,7 @@ local class Vector[t]
     end
     newArray
   end
-  
+
   -- DEBUG method
   def toString() : unit
     println("Vector: ")

@@ -151,13 +151,13 @@ active class CDCL
     val implicationGraph = this.instance.implicationGraph.implicationGraph
     repeat i <- implicationGraph.size() do
       val implications = implicationGraph.at(i)
-      var j = implications.size()-1
+      var j = implications.size() - 1
       val jLimit = 0
       while (j >= 0) do
         if (implications.at(j).dL > dL) then
           implications.remove(j)
         end
-        j = j - 1
+        j -= 1
       end
     end
     repeat i <- variables.size() do
@@ -173,6 +173,7 @@ active class CDCL
     this.instance.nVars == this.assignments.nSetVars
   end
 
+  -- TODO: (kiko) look at it in a bigger screen
   -- returns false if conflict is found, otherwise true
   def private unitPropagation(dL : int) : bool
     WAMP("In CDCL.unitPropagation()")
@@ -187,8 +188,8 @@ active class CDCL
       if (not firstLoop) then
         didPropagate = true
         this.assignments.assignCounterpart(literalsToAssign.at(popIndex))
-        popIndex = popIndex + 1
-        popCounter = popCounter - 1
+        popIndex += 1
+        popCounter -= 1
       end
       firstLoop = false
       while (didPropagate && noConflict) do
@@ -212,7 +213,7 @@ active class CDCL
                 loop = false
               end
             else
-              if (literal%2+vara.value == 1) then
+              if (literal % 2 + vara.value == 1) then
                 loop = false
               else
                 unitClauseV.push(literal)
@@ -256,11 +257,13 @@ active class CDCL
     this.latestConflictClause = conflictClause
     var vara = conflictClause.literals.at(0)
     if (vara % 2 == 0) then
-      vara = vara + 1
+      vara += 1
     else
-      vara = vara - 1
+      vara -= 1
     end
-    if ((conflictClause.literals.size() == 1) && ((this.assignments.variables.at(vara)).setByBranching)) then
+    if ((conflictClause.literals.size() == 1) &&
+        ((this.assignments.variables.at(vara)).setByBranching))
+    then
       backtrackDL = (this.assignments.variables.at(vara)).dL
     else
       repeat i <- conflictClause.literals.size() do
@@ -272,15 +275,17 @@ active class CDCL
         end
       end
     end
-    backtrackDL-1
+    backtrackDL - 1
   end
 
   def DFS(conflictNode : Vector[Implication]) : Vector[int]
-    val stack = new Vector[int](10)
     val toBeConflictClause = new Vector[int](10)
     val implicationGraph = this.instance.implicationGraph.implicationGraph
     val variables = this.assignments.getVariables()
+
+    val stack = new Vector[int](10)
     stack.push(conflictNode.at(0).variableIndex)
+
     while (stack.size() > 0) do
       val varIndex = stack.pop()
       val implications = implicationGraph.at(varIndex)

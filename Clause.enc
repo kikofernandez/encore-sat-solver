@@ -7,8 +7,8 @@ read class Clause
 -- public attributes
   val literals : RArray[int]
 
-  def init(literals_ : RArray[int]) : unit
-    this.literals = literals_
+  def init(literals : RArray[int]) : unit
+    this.literals = literals
   end
 
 -- public methods

@@ -6,18 +6,19 @@ import Vector
 import VVector
 
 local class Instance
--- public attributes
+
+  -- public attributes
   val nVars : int
   val implicationGraph : ImplicationGraph
--- private attributes
   val clauses : Vector[Clause]
 
-  def init(clauses_ : RVector[Clause], nVars_ : int) : unit
-    this.clauses = clauses_.toVector()
-    this.nVars = nVars_
+  def init(clauses : RVector[Clause], nVars : int) : unit
+    this.clauses = clauses.toVector()
+    this.nVars = nVars
     this.implicationGraph = new ImplicationGraph(this.nVars/2)
   end
--- public methods
+
+  -- public methods
   def addClause(clause : Clause) : unit
     this.clauses.push(clause)
   end

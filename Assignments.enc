@@ -6,7 +6,7 @@ import Array
 import LocalArray
 
 local class Variable
--- public attributes
+  -- public attributes
   var value : int
   var dL : int
   var setByBranching : bool
@@ -27,86 +27,87 @@ local class Variable
 end
 
 local class Assignments
--- public attributes
+  -- public attributes
   var nSetVars : int
--- private attributes
+  
+  -- private attributes
   val variables : LocalArray[Variable]
 
   def init(n : int, varsToAssign : RArray[int]) : unit
+    this.nSetVars = 0
     this.variables = new LocalArray[Variable](n)
     repeat i <- n do
       this.variables.set(i, new Variable())
     end
-    this.nSetVars = 0
-    for i <- [0 .. varsToAssign.size() - 1] do
+    repeat i <- varsToAssign.size() do
       this.guessVariable(varsToAssign.at(i), 1, -1, false)
     end
   end
 
--- public methods
+  -- public methods
   def assignVariable(index :  int, value : int, dL : int, setByBranching : bool) : unit
     var vara = this.variables.at(index)
-    if (vara.value == -1) then
+    if vara.value == -1 then
       vara.value = value
       vara.dL = dL
       vara.setByBranching = setByBranching
     else
-      print("Assign variable error, index {} already has a value.\n", index)
+      println("Assign variable error, index {} already has a value.", index)
       vara.toString()
-      exit(0)
+      abort("")
     end
     this.nSetVars = this.nSetVars + 1
   end
 
-  -- TODO: copy not using intermediate vector
   def getVariables() : LocalArray[Variable]
-    val newVars = new Vector[Variable]((this.variables.size())/2)
+    val newVars = new LocalArray[Variable](this.variables.size()/2)
+    var j = 0
     repeat i <- this.variables.size() do
-      if (i%2 == 0) then
-        newVars.push(this.variables.at(i))
+      if i % 2 == 0 then
+        newVars.set(j, this.variables.at(i))
+        j += 1
       end
     end
-    newVars.toLocalArray()
+    newVars
   end
 
   def resetVar(index : int) : unit
-    val index1 = index*2
-    val index2 = index1+1
-    var var1 = this.variables.at(index1)
-    var var2 = this.variables.at(index2)
-    if (var1.value != -1) then
+    var var1 = this.variables.at(index * 2)
+    var var2 = this.variables.at(index * 2 + 1)
+    if var1.value != -1 then
       this.nSetVars = this.nSetVars - 1
     end
-    if (var2.value != -1) then
+    if var2.value != -1 then
       this.nSetVars = this.nSetVars - 1
     end
-    var1.value = -1
-    var2.value = -1
-    var1.dL = -1
-    var2.dL = -1
-    var1.setByBranching = false
-    var2.setByBranching = false
-    var1.guessedValue = -1
-    var2.guessedValue = -1
+    reset(var1)
+    reset(var2)
+  where
+    fun reset(vari : Variable) : unit -- TODO: move to Variable
+      vari.value = -1
+      vari.dL = -1
+      vari.setByBranching = false
+      vari.guessedValue = -1
+    end
   end
 
   def assignCounterpart(index : int) : unit
     var index2 = index
-    if (index%2 == 0) then
-      index2 = index2+1
+    if (index % 2 == 0) then
+      index2 = index2 + 1
     else
-      index2 = index2-1
+      index2 = index2 - 1
     end
     var var1 = this.variables.at(index)
     var var2 = this.variables.at(index2)
-    if (var2.value == -1) then
+    if var2.value == -1 then
       var2.value = var1.value
       var2.dL = var1.dL
       var2.setByBranching = var1.setByBranching
     else
       println("Assign counterpart error, variable index {} already has a value.", index2)
       var2.toString()
-      exit(0)
+      abort("")
     end
     this.nSetVars = this.nSetVars + 1
   end
@@ -117,7 +118,7 @@ local class Assignments
     val index2 = index1+1
     val var1 = this.variables.at(index1)
     val var2 = this.variables.at(index2)
-    if ((var1.value == -1) && (var2.value == -1)) then
+    if var1.value == -1 && var2.value == -1 then
       var1.value = value
       var2.value = value
       var1.dL = dL
@@ -128,85 +129,38 @@ local class Assignments
       println("Guess variable error, variable index {} already has a value.", index2)
       var1.toString()
       var2.toString()
-      exit(0)
+      abort("")
     end
     this.nSetVars = this.nSetVars + 2
   end
 
-  -- TODO: remove not used
-{-  def getUnassignedIndexes() : [int]
-    val indexes = new Vector[int](this.variables.size())
-    repeat i <- this.variables.size() do
-      val vara = this.variables.at(i)
-      if (vara.value == -1) then
-        indexes.push(i)
-      end
-    end
-    indexes.toArray()
-  end
-  -}
-
-{- TODO: fix or delete if not used
-  -- TODO: convert to straight array copy
-  def toArray() : [int]
-    val variables = new Vector[int](this.variables.size())
-    repeat i <- this.variables.size() do
-      val vara = this.variables.at(i)
-      variables.push(vara.value)
-    end
-    variables.toArray()
-  end
-  -}
-
-{- TODO: remove if possible
-  def toString() : unit
-    print("Assignments: ")
-    val variables = this.getVariables()
-    repeat i <- variables.size do
-      var vara = variables.at(i)
-      if (vara.value == 0) then
-        print("{}","-")
-      else if (vara.value == -1) then
-        print("{}","UNSAT")
-      end
-      print("x{} ",i+1)
-      if (((i+1)*2)%5 == 0) then
-        println("")
-      end
-    end
-    println("")
-  end
--}
-
-  def final() : FinalAssignment
+  def finalAssignment() : FinalAssignment
     new FinalAssignment(this.variables)
   end
 
   def convertClauseToConflictClause(clause : Clause) : Clause
-    var conflictLiterals = new Vector[int](1)
-    repeat j <- clause.literals.size() do
-      var unique = true
-      var loop = true
-      var k = 0
+    val size = clause.literals.size()
+    var conflictLiterals = new Array[int](size)
+    repeat j <- size do
       var literal = clause.literals.at(j)
-      var vara = this.variables.at(literal)
-      if (vara.value == 0) then
-        if (literal%2 == 1) then
-          literal = literal-1
+      if this.variables.at(literal).value == 0 then
+        if literal % 2 == 1 then
+          literal -= 1
         end
       else
-        if (literal%2 == 0) then
-          literal = literal+1
+        if literal % 2 == 0 then
+          literal += 1
         end
       end
-      conflictLiterals.push(literal)
+      conflictLiterals.set(j, literal)
     end
-    new Clause(conflictLiterals.toArray())
+    new Clause(consume conflictLiterals)
   end
 end
 
+
 read class FinalAssignment
-  val assignment : RArray[int]  -- TODO: use Array
+  val assignment : RArray[int]
 
   def init(vars : LocalArray[Variable]) : unit
     var res = new Array[int](vars.size())
@@ -219,13 +173,13 @@ read class FinalAssignment
   def toString() : unit
     print("Assignments: ")
     repeat i <- this.assignment.size() do
-      if (this.assignment.at(i) == 0) then
-        print("{}","-")
-      else if (this.assignment.at(i) == -1) then
-        print("{}","UNSAT")
+      if this.assignment.at(i) == 0 then
+        print("{}", "-")
+      else if this.assignment.at(i) == -1 then
+        print("{}", "UNSAT")
       end
-      print("x{} ",i+1)
-      if (((i+1)*2)%5 == 0) then
+      print("x{} ", i+1)
+      if ((i + 1) * 2) % 5 == 0 then
         println("")
       end
     end

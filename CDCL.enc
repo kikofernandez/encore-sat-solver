@@ -68,7 +68,7 @@ active class CDCL
   -- end
 
   def getAssignments() : FinalAssignment
-    this.assignments.final()
+    this.assignments.finalAssignment()
   end
 
 -- public methods

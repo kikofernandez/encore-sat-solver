@@ -102,45 +102,47 @@ active class CDCL
     (solveable, done, conflict)
   end
 
--- private methods
   def checkCorrectness() : bool
     WAMP("In CDCL.checkCorrectness()")
     val variables = this.assignments.variables
-    var error = false
     var i = 0
     var iLimit = variables.size()
-    while (not error && (i < iLimit)) do
+    while (i < iLimit) do
       val var1 = variables.at(i)
       val var2 = variables.at(i+1)
       if ((var1.value == -1) || (var2.value == -1) || (var1.value != var2.value)) then
-        error = true
+        return false
       end
-      i = i + 2
+      i += 2
     end
     i = 0
     iLimit = this.instance.clauses.size()
-    val variables = this.assignments.getVariables() -- TODO: isn't this redundant??
-    while (not error && (i < iLimit)) do
+
+    -- NOTE: getVariables creates a copy of half the items
+    val variables = this.assignments.getVariables()
+
+    while (i < iLimit) do
       val literals = this.instance.clauses.at(i).literals
       var satisfied = false
       var j = 0
       val jLimit = literals.size()
-      while(not error && (j < jLimit)) do
+      while(j < jLimit) do
         val literal = literals.at(j)
         val index = literalToVarIndex(literal)
         val vara = variables.at(index)
-        if ((literal%2+vara.value == 1)) then
+        if (literal % 2 + vara.value == 1) then
           satisfied = true
+          break
         end
-        j = j + 1
+        j += 1
       end
       if (not satisfied) then
-        error = true
+        return false
       end
-      i = i + 1
+      i += 1
     end
     WAMP("Leaving CDCL.checkCorrectness()")
-    not error
+    return true
   end
 
   def backtrack(dL : int) : unit

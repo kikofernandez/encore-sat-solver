@@ -12,7 +12,6 @@ read class Clause
   end
 
 -- public methods
-  -- DEBUG method
   def toString() : unit
     print("Clause: {}","")
     repeat i <- this.literals.size() do
@@ -26,20 +25,19 @@ read class Clause
     println("")
   end
 
-  -- TODO: avoid double copy
   def toConflictClause() : Clause
-    val conflictLiterals = new Vector[int](this.literals.size())
+    var conflictLiterals = new Array[int](this.literals.size())
     repeat i <- this.literals.size() do
+      val c = this.literals.at(i)
       if (this.literals.at(i) % 2 == 0) then
-        conflictLiterals.push(this.literals.at(i)+1)
+        conflictLiterals.set(i, c+1)
       else
-        conflictLiterals.push(this.literals.at(i)-1)
+        conflictLiterals.set(i, c-1)
       end
     end
-    new Clause(conflictLiterals.toRArray())
+    new Clause(consume conflictLiterals)
   end
 
-  -- TODO: replace |clause.literals| by clause.size(), everywhere
   def size() : int
     this.literals.size()
   end

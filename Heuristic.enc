@@ -22,7 +22,6 @@ BODY
     return r % 2;
   }
 
-
 END
 
 linear class Heuristic
@@ -49,10 +48,9 @@ linear class Heuristic
       this.vsidsMax = 50
       this.vsidsCounters = new [real](nVars)
       repeat i <- clauses.size() do
-        val clause = clauses.at(i)
-        val literals = clause.literals
+        val literals = clauses.at(i).literals
         repeat j <- literals.size() do
-          this.vsidsCounters(literals.at(j) / 2) = this.vsidsCounters(literals.at(j) / 2) + 1.0
+          this.vsidsCounters(literals.at(j) / 2) += 1.0
         end
       end
     end
@@ -123,18 +121,17 @@ linear class Heuristic
   end
 
   -- Only for VSIDS
-  -- TODO: contains mutation. otherwise the class could have read mode
   def addConflictClause(clause : Clause) : unit
     if (this.variableSelection == 6) then
       val literals = clause.literals
       repeat j <- literals.size() do
-        this.vsidsCounters(literals.at(j) / 2) = this.vsidsCounters(literals.at(j) / 2) + 1.0
+        this.vsidsCounters(literals.at(j) / 2) += 1.0
       end
-      this.vsidsCounter = this.vsidsCounter + 1
+      this.vsidsCounter += 1
       if (this.vsidsCounter == this.vsidsMax) then
         this.vsidsCounter = 0
         repeat i <- |this.vsidsCounters| do
-          this.vsidsCounters(i) = this.vsidsCounters(i) * 0.5
+          this.vsidsCounters(i) *= 0.5
         end
       end
     end
@@ -155,7 +152,7 @@ linear class Heuristic
     (maxI, -1)
   end
 
-  -- TODO: pure function
+  -- NOTE: pure function
   def private forwardVariableInOrder(variables : LocalArray[Variable]) : (int,int)
     var index = -1
     var loop = true
@@ -173,7 +170,7 @@ linear class Heuristic
     (index, literal)
   end
 
-  -- TODO: pure function
+  -- NOTE: pure function
   def private backwardsVariableInOrder(variables : LocalArray[Variable]) : (int,int)
     var index = -1
     var loop = true
@@ -191,7 +188,7 @@ linear class Heuristic
     (index, literal)
   end
 
-  -- TODO: pure function
+  -- NOTE: pure function
   def private backwardsLiteralInOrder(variables : LocalArray[Variable], clauses : Vector[Clause]) : (int,int)
     var index = -1
     var loop = true
@@ -199,20 +196,17 @@ linear class Heuristic
     val iLimit = 0
     var literal = -1
     while (loop && (i >= iLimit)) do
-      val clause = clauses.at(i)
-      val literals = clause.literals
+      val literals = clauses.at(i).literals
       var j = literals.size() - 1
       val jLimit = 0
       while (loop && (j >= jLimit)) do
-        literal = literals.at(j)
-        index = literalToVarIndex(literal)
-        val vara = variables.at(index)
-        if (vara.value == -1) then
+        index = literalToVarIndex(literals.at(j))
+        if (variables.at(index).value == -1) then
           loop = false
         end
-        j = j - 1
+        j -= 1
       end
-      i = i - 1
+      i -=  1
     end
     (index, literal)
   end

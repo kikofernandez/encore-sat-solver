@@ -21,9 +21,9 @@ active class Solver
   val ccNum : int -- How many conflict clauses to send
   val ccM : int
 
-  var ccSent : int
-  var ccCounter : int
-  var restartCounter : int
+  var ccSent : int = 0
+  var ccCounter : int = -1
+  var restartCounter : int = 0
 
   -- TODO: varsToAssign is a read-only array
   def init(clauses : RVector[Clause], n_vars : int, varsToAssign : RArray[int], var heuristic : Heuristic, master : Main, solverId : int, ccLength : int, iterations : int, ccNumber : int, ccM : int, restart : int) : unit
@@ -35,9 +35,6 @@ active class Solver
     this.iterations = iterations
     this.ccNum = ccNumber
     this.ccM = ccM
-    this.ccCounter = -1
-    this.ccSent = 0
-    this.restartCounter = 0
     this.restartCounterMax = restart
   end
 
@@ -48,20 +45,24 @@ active class Solver
     this.loop(solveable, done)
   end
 
+  -- TODO: some work to elimate the gets
   def finishLoop(solveable : bool) : unit
-    if(not get(this.master!getIsSolved())) then
-      if (solveable) then
+    if not get(this.master!getIsSolved()) then
+      if solveable then
         this.master!setSolved()
         println("Satisfiable!")
         val correct = get(this.cdcl!checkCorrectness())
-        if (correct && solveable) then
+        if correct && solveable then
           println("Solution is correct, and was found by solver number {}:", this.solverId)
+	  -- TODO: make this one call!
           get(this.cdcl!variableSelectionToString())
           get(this.cdcl!valueSelectionToString())
         else
           println("Solution is incorrect.")
         end
 
+	-- TODO: make these one call (probably just return all results
+	-- from CDCL in one object)
         val conflicts = get(this.cdcl!getAllConflicts())
         val assignments = get(this.cdcl!getAssignments())
         val nSetVars = get(this.cdcl!getSetVars())
@@ -74,6 +75,7 @@ active class Solver
     end
   end
 
+  -- TODO: much work to eliminate the gets
   def loop(var solveable : bool, var done : bool) : unit
     WAMP("Starting Loop.")
     var i = 0
@@ -82,23 +84,23 @@ active class Solver
     while (i < this.iterations) do
       WAMP("Iterating")
       -- TODO: bad design. blocking in a while loop...
-      if (solveable && not done && not get(this.master!getIsSolved())) then
+      if solveable && not done && not get(this.master!getIsSolved()) then
         val res = get(this.cdcl!solve())
         solveable = res.0
         done = res.1
-        if (res.2) then
-          if ((this.ccNum == -1) || (this.ccSent < this.ccNum)) then
+        if res.2 then
+          if this.ccNum == -1 || this.ccSent < this.ccNum then
             val conflictClause = get(this.cdcl!getLatestConflictClause())
-            if ((this.ccLength == -1) || (conflictClause.size() <= this.ccLength)) then
-              this.ccCounter = this.ccCounter + 1
-              if (this.ccCounter%this.ccM == 0) then
+            if this.ccLength == -1 || conflictClause.size() <= this.ccLength then
+              this.ccCounter += 1
+              if this.ccCounter % this.ccM == 0 then
                 this.master ! addConflictClause(conflictClause, this.solverId)
-                this.ccSent = this.ccSent + 1
+                this.ccSent += 1
               end
             end
           end
-          this.restartCounter = this.restartCounter + 1
-          if (this.restartCounter == this.restartCounterMax) then
+          this.restartCounter += 1
+          if this.restartCounter == this.restartCounterMax then
             this.restartCounter = 0
             this.cdcl!restart()
           end
@@ -111,7 +113,7 @@ active class Solver
       i = i + 1
     end
     WAMP("Out bottom of iteration")
-    if (not shouldEnd) then
+    if not shouldEnd then
       solver ! loop(solveable, done) -- send message to self to allow gc,
                                      -- and addConflictClause to run
     end

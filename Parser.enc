@@ -119,7 +119,6 @@ BODY
     }
     int64_t get_literal(int64_t clause, int64_t literal_number) {
         return clause_list[clause][literal_number];
-
     }
 END
 
@@ -128,8 +127,8 @@ local class Parser
   var nvariables : int
   val file : String
 
-  def init(file_ : String) : unit
-    this.file = file_
+  def init(file : String) : unit
+    this.file = file
   end
 
   def parseFile() : Parser

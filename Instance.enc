@@ -15,7 +15,7 @@ local class Instance
   def init(clauses : RVector[Clause], nVars : int) : unit
     this.clauses = clauses.toVector()
     this.nVars = nVars
-    this.implicationGraph = new ImplicationGraph(this.nVars/2)
+    this.implicationGraph = new ImplicationGraph(this.nVars / 2)
   end
 
   -- public methods

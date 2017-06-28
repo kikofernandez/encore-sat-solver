@@ -14,7 +14,7 @@ end
 
 
 local class LinearQueue[linear t]
--- private attributes
+  -- private attributes
   var head : Maybe[Link[t]]
   var tail : Maybe[Link[t]]
   var no_elements : int

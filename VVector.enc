@@ -10,8 +10,8 @@ read trait RVector[t]
 
   def at(index : int) : t
     if (not this.inBounds(index)) then
-        println("Error: Vector at index out of bounds for index {}. Exiting.\n", index)
-        exit(-1)
+        println("Error: Vector at index out of bounds for index {}. Exiting.", index)
+        abort("")
     end
     this.array(index)
   end
@@ -36,17 +36,9 @@ read trait RVector[t]
     newVector
   end
 
-  -- DEBUG method
-  def toString() : unit
-    println("Vector: ")
-    repeat i <- this.nElements do
-      print("")
-    end
-  end
-
--- private methods
+  -- private methods
   def private inBounds(index : int) : bool
-    (index >= 0) && (index < this.nElements)
+    index >= 0 && index < this.nElements
   end
 end
 
@@ -58,45 +50,44 @@ linear trait WVector[t]
   require def inBounds(index : int) : bool
 
   def set(index : int, value : t) : unit
-    if (not this.inBounds(index)) then
-        println("Error: Vector set index out of bounds for index {}. Exiting.\n", index)
-        exit(-1)
+    if not this.inBounds(index) then
+        println("Error: Vector set index out of bounds for index {}. Exiting.", index)
+        abort("")
     end
     this.array(index) = value
   end
 
   def remove(index : int) : unit
-    if (not this.inBounds(index)) then
-        println("Error: Vector remove index out of bounds for index {}. Exiting.\n", index)
+    if not this.inBounds(index) then
+        println("Error: Vector remove index out of bounds for index {}. Exiting.", index)
         exit(-1)
     end
     var i = index
     var iLimit = this.nElements - 1
-    while (i < iLimit) do
+    while i < iLimit do
       this.array(i) = this.array(i+1)
-      i = i + 1
+      i += 1
     end
     this.nElements = this.nElements-1
   end
 
   def push(object : t) : unit
-    if (this.nElements == this.arraySize) then
-      this.realloc(this.arraySize*2)
+    if this.nElements == this.arraySize then
+      this.realloc(this.arraySize * 2)
     end
     this.array(this.nElements) = object
-    this.nElements = this.nElements+1
+    this.nElements += 1
   end
 
   def pop() : t
-    if (this.nElements < 1) then
-      println("Error: Vector is empty, pop failed. Exiting.\n")
-      exit(-1)
+    if this.nElements < 1 then
+      abort("Error: Vector is empty, pop failed. Exiting.")
     end
     this.nElements = this.nElements-1
     this.array(this.nElements)
   end
 
--- private methods
+  -- private methods
   def private realloc(newSize : int) : unit
     val newArray = new [t](newSize)
     repeat i <- this.arraySize do
@@ -109,15 +100,13 @@ end
 
 
 class VVector[t] : RVector[t] + WVector[t]
--- private attributes
+  -- private attributes
   var arraySize : int
-  var nElements : int
   var array : [t]
+  var nElements : int = 0
 
-  def init(arraySize_ : int) : unit
-      this.arraySize = arraySize_
-      this.array = new [t](this.arraySize)
-      this.nElements = 0
+  def init(arraySize : int) : unit
+    this.arraySize = arraySize
+    this.array = new [t](this.arraySize)
   end
-
 end

@@ -24,7 +24,7 @@ active class Main
 
   def addConflictClause(conflictClause : Clause, solverId : int) : unit
     repeat i <- |this.solvers| do
-      if (i != solverId) then
+      if i != solverId then
         (this.solvers(i))!addConflictClause(conflictClause)
       end
     end
@@ -37,17 +37,6 @@ active class Main
   def getIsSolved() : bool
       this.isSolved
   end
-
-  -- def pause() : unit
-  --   EMBED (unit) fgetc(stdin); END
-  -- end
-
-  -- def printClauses(clauses : Vector[Clause]) : unit
-  --   println("Clauses to solve")
-  --   repeat n <- clauses.size() do
-  --     clauses.at(n).toString()
-  --   end
-  -- end
 
   def charToInt(c : char) : int
     if (c == '0') then
@@ -72,8 +61,7 @@ active class Main
       9
     else
       println("Cannot convert char {} to int, exiting. ", c)
-      exit(1)
-      0 -- to avoid compilation error with different types of if else
+      abort("")
     end
   end
 
@@ -97,9 +85,6 @@ active class Main
   def preProcess(clauses : RVector[Clause], nVars : int) : RArray[int]
     val exists = new Array[bool](nVars)
 
-    -- Vectors take an initial size and expand dynamically
-    val varsToAssign = new Vector[int](10)
-
     var j = 0
     while (j < clauses.size()) do
       var clause = clauses.at(j)
@@ -107,15 +92,16 @@ active class Main
       val kLimit = clause.size()
       -- TODO: not sure what this does?
       -- Why does a clause has an array of numbers?
-      while (k < kLimit) do
-        exists.set(clause.literals.at(k)/2,  true)
+      while k < kLimit do
+        exists.set(clause.literals.at(k) / 2,  true)
         k = k + 1
       end
       j = j + 1
     end
 
+    val varsToAssign = new Vector[int](10)
     repeat i <- exists.size() do
-      if (not exists.at(i)) then
+      if not exists.at(i) then
         varsToAssign.push(i)
       end
     end
@@ -123,35 +109,35 @@ active class Main
   end
 
   def private setupHeuristics(heuristics: LinearQueue[Heuristic], clauses: RVector[Clause], val nVars: int): unit
-    heuristics.enqueue(Just(new Heuristic(3,6, nVars, clauses))) --VSIDS
-    heuristics.enqueue(Just(new Heuristic(0,0, nVars, clauses))) --Literal false literal forward
-    heuristics.enqueue(Just(new Heuristic(0,5, nVars, clauses))) --Literal false smallest
-    heuristics.enqueue(Just(new Heuristic(2,5, nVars, clauses))) --Value random smallest
-    heuristics.enqueue(Just(new Heuristic(3,0, nVars, clauses))) --Variable false literal forward
-    heuristics.enqueue(Just(new Heuristic(3,1, nVars, clauses))) --Variable false literal back
-    heuristics.enqueue(Just(new Heuristic(4,6, nVars, clauses))) --VSIDS
-    heuristics.enqueue(Just(new Heuristic(4,0, nVars, clauses))) --Variable true literal forward
-    heuristics.enqueue(Just(new Heuristic(2,6, nVars, clauses))) --VSIDS random
-    heuristics.enqueue(Just(new Heuristic(4,1, nVars, clauses))) --Variable true literal back
-    heuristics.enqueue(Just(new Heuristic(1,4, nVars, clauses))) --Literal true largest
-    heuristics.enqueue(Just(new Heuristic(0,1, nVars, clauses))) --Literal false literal back
-    heuristics.enqueue(Just(new Heuristic(2,0, nVars, clauses))) --Value random literal forward
-    heuristics.enqueue(Just(new Heuristic(2,1, nVars, clauses))) --Value random literal back
-    heuristics.enqueue(Just(new Heuristic(0,4, nVars, clauses))) --Literal false largest
-    heuristics.enqueue(Just(new Heuristic(1,0, nVars, clauses))) --Literal true literal forward
-    heuristics.enqueue(Just(new Heuristic(2,2, nVars, clauses))) --Value random variable forward
-    heuristics.enqueue(Just(new Heuristic(2,3, nVars, clauses))) --Value random variable back
-    heuristics.enqueue(Just(new Heuristic(2,4, nVars, clauses))) --Value random largest
-    heuristics.enqueue(Just(new Heuristic(3,2, nVars, clauses))) --Variable false variable forward
-    heuristics.enqueue(Just(new Heuristic(4,4, nVars, clauses))) --Variable true largest
-    heuristics.enqueue(Just(new Heuristic(3,3, nVars, clauses))) --Variable false variable back
-    heuristics.enqueue(Just(new Heuristic(4,2, nVars, clauses))) --Variable true variable forward
-    heuristics.enqueue(Just(new Heuristic(1,1, nVars, clauses))) --Literal true literal back
-    heuristics.enqueue(Just(new Heuristic(1,5, nVars, clauses))) --Literal true smallest
-    heuristics.enqueue(Just(new Heuristic(3,5, nVars, clauses))) --Variable false smallest
-    heuristics.enqueue(Just(new Heuristic(4,3, nVars, clauses))) --Variable true variable back
-    heuristics.enqueue(Just(new Heuristic(3,4, nVars, clauses))) --Variable false largest
-    heuristics.enqueue(Just(new Heuristic(4,5, nVars, clauses))) --Variable true smallest
+    heuristics.enqueue(Just(new Heuristic(3,6, nVars, clauses))) -- VSIDS
+    heuristics.enqueue(Just(new Heuristic(0,0, nVars, clauses))) -- Literal false literal forward
+    heuristics.enqueue(Just(new Heuristic(0,5, nVars, clauses))) -- Literal false smallest
+    heuristics.enqueue(Just(new Heuristic(2,5, nVars, clauses))) -- Value random smallest
+    heuristics.enqueue(Just(new Heuristic(3,0, nVars, clauses))) -- Variable false literal forward
+    heuristics.enqueue(Just(new Heuristic(3,1, nVars, clauses))) -- Variable false literal back
+    heuristics.enqueue(Just(new Heuristic(4,6, nVars, clauses))) -- VSIDS
+    heuristics.enqueue(Just(new Heuristic(4,0, nVars, clauses))) -- Variable true literal forward
+    heuristics.enqueue(Just(new Heuristic(2,6, nVars, clauses))) -- VSIDS random
+    heuristics.enqueue(Just(new Heuristic(4,1, nVars, clauses))) -- Variable true literal back
+    heuristics.enqueue(Just(new Heuristic(1,4, nVars, clauses))) -- Literal true largest
+    heuristics.enqueue(Just(new Heuristic(0,1, nVars, clauses))) -- Literal false literal back
+    heuristics.enqueue(Just(new Heuristic(2,0, nVars, clauses))) -- Value random literal forward
+    heuristics.enqueue(Just(new Heuristic(2,1, nVars, clauses))) -- Value random literal back
+    heuristics.enqueue(Just(new Heuristic(0,4, nVars, clauses))) -- Literal false largest
+    heuristics.enqueue(Just(new Heuristic(1,0, nVars, clauses))) -- Literal true literal forward
+    heuristics.enqueue(Just(new Heuristic(2,2, nVars, clauses))) -- Value random variable forward
+    heuristics.enqueue(Just(new Heuristic(2,3, nVars, clauses))) -- Value random variable back
+    heuristics.enqueue(Just(new Heuristic(2,4, nVars, clauses))) -- Value random largest
+    heuristics.enqueue(Just(new Heuristic(3,2, nVars, clauses))) -- Variable false variable forward
+    heuristics.enqueue(Just(new Heuristic(4,4, nVars, clauses))) -- Variable true largest
+    heuristics.enqueue(Just(new Heuristic(3,3, nVars, clauses))) -- Variable false variable back
+    heuristics.enqueue(Just(new Heuristic(4,2, nVars, clauses))) -- Variable true variable forward
+    heuristics.enqueue(Just(new Heuristic(1,1, nVars, clauses))) -- Literal true literal back
+    heuristics.enqueue(Just(new Heuristic(1,5, nVars, clauses))) -- Literal true smallest
+    heuristics.enqueue(Just(new Heuristic(3,5, nVars, clauses))) -- Variable false smallest
+    heuristics.enqueue(Just(new Heuristic(4,3, nVars, clauses))) -- Variable true variable back
+    heuristics.enqueue(Just(new Heuristic(3,4, nVars, clauses))) -- Variable false largest
+    heuristics.enqueue(Just(new Heuristic(4,5, nVars, clauses))) -- Variable true smallest
   end
 
   def main(args : [String]) : unit
@@ -160,11 +146,11 @@ active class Main
         println("{}", "Usage: ")
         println("{}", args(0))
         println(" [-s nsolvers [-heu val1 var1 val2 var2 ...] | -i niter | -ccl len | -ccn num | -ccm num | -r restart ] filename")
-        exit(-1)
+        abort("")
     end
 
     -- setup initial state
-    var filename = "" : String --args(1)
+    var filename = "" : String -- args(1)
     var numSolvers = 4
     var iterations = 1 -- Number of times to spin before a solver checks for new clauses and invokes GC
     var ccLength = 10 -- Maximum length of shared clauses
@@ -178,98 +164,97 @@ active class Main
 
     -- Update state via command line
     while (a < |args|) do
-        if ((args(a)).equals("-s")) then
-          if (a + 1 < |args|) then
+        if args(a).equals("-s") then
+          if a + 1 < |args| then
             numSolvers = this.stringToInt(args(a + 1))
             a = a + 1
           else
             print("Missing argument for -s")
           end
 
-          if ((args(a + 1)).equals("-heu")) then
+          if args(a + 1).equals("-heu") then
             a = a + 1
             repeat i <- numSolvers do
-              if (a + 2 >= |args|) then
+              if a + 2 >= |args| then
                 print("Missing arguments for -heu, exiting.\n")
-                exit(-1)
+                abort("")
               end
               customVals.push(this.stringToInt(args(a + 1)))
               customVars.push(this.stringToInt(args(a + 2)))
               a = a + 2
             end
           end
-        else if ((args(a)).equals("-i")) then
+        else if args(a).equals("-i") then
           if (a + 1 < |args|) then
             iterations = this.stringToInt(args(a + 1))
             a = a + 1
           else
             println("Missing argument for -i")
           end
-        else if ((args(a)).equals("-ccl")) then
-          if (a + 1 < |args|) then
+        else if args(a).equals("-ccl") then
+          if a + 1 < |args| then
             ccLength = this.stringToInt(args(a + 1))
             a = a + 1
           else
             println("Missing argument for -ccl")
           end
-        else if ((args(a)).equals("-ccn")) then
-          if (a + 1 < |args|) then
+        else if args(a).equals("-ccn") then
+          if a + 1 < |args| then
             ccNumber = this.stringToInt(args(a + 1))
             a = a + 1
           else
             println("Missing argument for -ccn")
           end
-        else if ((args(a)).equals("-ccm")) then
-          if (a + 1 < |args|) then
+        else if args(a).equals("-ccm") then
+          if a + 1 < |args| then
             ccM = this.stringToInt(args(a + 1))
             a = a + 1
           else
             println("Missing argument for -ccm")
           end
-        else if ((args(a)).equals("-r")) then
-          if (a + 1 < |args|) then
+        else if args(a).equals("-r") then
+          if a + 1 < |args| then
             restarts = this.stringToInt(args(a + 1))
             a = a + 1
           else
             print("Missing argument for -r")
           end
         else
-          if (|args| - 1 == a) then
+          if |args| - 1 == a then
             filename = args(a)
           else
             println("Wrong arguments, exiting.")
             println("{}", "Usage: ")
             println("{}", args(0))
             println(" [-s nsolvers [-heu val1 var1 val2 var2 ...] | -i niter | -ccl len | -ccn num | -ccm num | -r restart ] filename")
-            exit(-1)
+            abort("")
           end
-
         end
         a = a + 1
     end
     if (numSolvers <= 0) then
       println("Illegal number of solver: {}, exiting.\n", numSolvers)
-      exit(-1)
+      abort("")
     end
     if (iterations <= 0) then
       println("Illegal number of iterations: {}, exiting.\n", iterations)
-      exit(-1)
+      abort("")
     end
     if (ccLength < -1) then
       println("Illegal conflict clause max length: {}, exiting.\n", ccLength)
-      exit(-1)
+      abort("")
     end
     if (ccNumber < -1) then
       println("Illegal conflict clause maximum number: {}, exiting.\n", ccNumber)
-      exit(-1)
+      abort("")
     end
     if (ccM < -1) then
       println("Illegal conflict clause quantity number: {}, exiting.\n", ccM)
-      exit(-1)
+      abort("")
     end
     if (filename.equals("")) then
       print("No input file specified, exiting.")
-      exit(-1)
+      abort("")
     end
 
     -- Parsing phase. new method
@@ -299,6 +284,7 @@ active class Main
     end
 
     for f <- futs do
+      -- TODO: need a better way of synchronising multiple futures
       await(f)
     end
     WAMP("Out the bottom")

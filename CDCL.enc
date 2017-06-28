@@ -164,8 +164,8 @@ active class CDCL
     WAMP("In CDCL.backtrack()")
     val variables = this.assignments.getVariables()
     val implicationGraph = this.instance.implicationGraph.implicationGraph
-    repeat i <- |implicationGraph| do
-      val implications = implicationGraph(i)
+    repeat i <- implicationGraph.size() do
+      val implications = implicationGraph.at(i)
       var j = implications.size()-1
       val jLimit = 0
       while (j >= 0) do
@@ -298,7 +298,7 @@ active class CDCL
     stack.push(conflictNode.at(0).variableIndex)
     while (stack.size() > 0) do
       val varIndex = stack.pop()
-      val implications = implicationGraph(varIndex)
+      val implications = implicationGraph.at(varIndex)
       val vara = variables.at(varIndex)
       if (not vara.visited) then
         vara.visited = true
@@ -307,7 +307,7 @@ active class CDCL
           val unitClause = implication.unitClause
           repeat j <- unitClause.literals.size() do
             val literal = unitClause.literals.at(j)
-            val imp = implicationGraph(literalToVarIndex(literal))
+            val imp = implicationGraph.at(literalToVarIndex(literal))
             if (imp.size() == 0) then
               var unique = true
               var k = 0

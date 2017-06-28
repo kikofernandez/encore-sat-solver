@@ -2,48 +2,49 @@ module ImplicationGraph
 
 import Vector
 import Clause
-
+import LocalArray
 
 local class Implication
--- public attributes
+  -- public attributes
   val variableIndex : int
   val unitClause : Clause
   val dL : int
   val value : int
 
-  def init(unitClause_ : Clause, dL_ : int, value_ : int, variableIndex_ : int) : unit
-    this.unitClause = unitClause_
-    this.dL = dL_
-    this.value = value_
-    this.variableIndex = variableIndex_
+  def init(unitClause : Clause, dL : int, value : int, variableIndex : int) : unit
+    this.unitClause = unitClause
+    this.dL = dL
+    this.value = value
+    this.variableIndex = variableIndex
   end
 
   def toString() : unit
-    println("Implication: value: {}, variable: {}, dL: {} ", this.value, this.variableIndex+1, this.dL)
+    println("Implication: value: {}, variable: {}, dL: {} ", this.value, this.variableIndex + 1, this.dL)
     this.unitClause.toString()
   end
 end
 
 local class ImplicationGraph
--- private attributes
-  val implicationGraph : [Vector[Implication]]
+  val implicationGraph : LocalArray[Vector[Implication]]
+
+  -- private attributes
   var latestConflictIndex : int
 
   def init(n : int) : unit
-    this.implicationGraph = new [Vector[Implication]](n)
-    repeat i <- n do
-      this.implicationGraph(i) = new Vector[Implication](2)
-    end
     this.latestConflictIndex = -1
+    this.implicationGraph = new LocalArray[Vector[Implication]](n)
+    repeat i <- n do
+      this.implicationGraph.set(i, new Vector[Implication](2))
+    end
   end
 
--- public methods
+  -- public methods
   -- returns false if conflict is found, otherwise true
   def addImplication(clause : Clause, dL : int, value : int, index : int) : bool
     var noConflict = true
-    var implicationsForVariable = this.implicationGraph(index)
-    if (implicationsForVariable.size() > 0) then
-      if (implicationsForVariable.at(0).value != value) then
+    var implicationsForVariable = this.implicationGraph.at(index)
+    if implicationsForVariable.size() > 0 then
+      if implicationsForVariable.at(0).value != value then
         this.latestConflictIndex = index
         noConflict = false
       end
@@ -54,15 +55,15 @@ local class ImplicationGraph
   end
 
   def getLatestConflict() : Vector[Implication]
-    this.implicationGraph(this.latestConflictIndex)
+    this.implicationGraph.at(this.latestConflictIndex)
   end
 
   def toString() : unit
     println("ImplicationGraph:")
-    repeat i <- |this.implicationGraph| do
-      var implications = this.implicationGraph(i)
-      if (implications.size() > 0) then
-        print("variable: {} ", i+1)
+    repeat i <- this.implicationGraph.size() do
+      var implications = this.implicationGraph.at(i)
+      if implications.size() > 0 then
+        print("variable: {} ", i + 1)
         repeat j <- implications.size() do
           val implication = implications.at(j)
           implication.toString()

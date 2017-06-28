@@ -40,7 +40,7 @@ linear class Heuristic
     if(((this.variableSelection > 1) && (this.variableSelection < 4)) || (this.variableSelection == 6)) then
       if(this.valueSelection <  2) then
         println("Illegal combination of value {} and variable {} heuristics.", valueSelection, variableSelection)
-        exit(-1)
+        abort("")
       end
     end
     if (variableSelection == 6) then -- VSIDS

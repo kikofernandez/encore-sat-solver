@@ -7,19 +7,11 @@ import LocalArray
 
 local class Variable
   -- public attributes
-  var value : int
-  var dL : int
-  var setByBranching : bool
-  var guessedValue : int
-  var visited : bool
-
-  def init() : unit
-    this.value = -1
-    this.dL = -1
-    this.setByBranching = false
-    this.guessedValue = -1
-    this.visited = false
-  end
+  var value : int = -1
+  var dL : int = -1
+  var setByBranching : bool = false
+  var guessedValue : int = -1
+  var visited : bool = false
 
   def toString() : unit
     println("Value: {}, dL: {}, setByBranching: {}, guessedValue: {}, visited: {}", this.value, this.dL, this.setByBranching, this.guessedValue, this.visited)

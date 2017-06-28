@@ -1,0 +1,259 @@
+module VariableSelection
+
+import LocalArray
+import Assignments
+import Clause
+import Vector
+import Array
+import Util
+
+read trait TVariableSelection
+  require val id: uint
+  require val isVsid : bool
+  require def variableSelectionToString() : unit
+  require def getVariableSelection(variables : LocalArray[Variable], clauses : Vector[Clause]) : (int,int)
+
+  def getId(): uint
+    this.id
+  end
+
+  def isVsid(): bool
+    this.isVsid
+  end
+
+  def nUnassignedLiterals(clause : Clause, variables : LocalArray[Variable]) : int
+    var nUnassigned = 0
+    repeat i <- clause.literals.size() do
+      if((variables.at(literalToVarIndex(clause.literals.at(i)))).value == -1) then
+        nUnassigned = nUnassigned + 1
+      end
+    end
+    nUnassigned
+  end
+
+  def getUnassignedVariable(clause : Clause, variables : LocalArray[Variable]) : (int,int)
+    var index = 0
+    var i = 0
+    while (i < clause.literals.size()) do
+      index = literalToVarIndex(clause.literals.at(i))
+      if((variables.at(index)).value == -1) then
+        return (index, clause.literals.at(i))
+      end
+      i += 1
+      if (i == clause.literals.size()) then
+        return (index, 0)
+      end
+    end
+    (index, 0)
+  end
+end
+
+{- Literal Forwards -}
+class LitForwards : TVariableSelection
+  val id: uint = 0
+  val isVsid : bool = false
+
+  def getVariableSelection(variables : LocalArray[Variable],
+                             clauses : Vector[Clause]) : (int,int)
+    var index = -1
+    var i = 0
+    val iLimit = clauses.size()
+    var literal = -1
+    while (i < iLimit) do
+      val literals = clauses.at(i).literals
+      var j = 0
+      val jLimit = literals.size()
+      while (j < jLimit) do
+        literal = literals.at(j)
+        index = literalToVarIndex(literal)
+        val vara = variables.at(index)
+        if (vara.value == -1) then
+          return (index, literal)
+        end
+        j += 1
+      end
+      i += 1
+    end
+    return (index, literal)
+  end
+
+  def variableSelectionToString() : unit
+    println("Variable heuristic: Forward in order literal selection")
+  end
+end
+
+{- Literal Backwards -}
+class LitBackwards : TVariableSelection
+  val id: uint = 1
+  val isVsid : bool = false
+
+  def getVariableSelection(variables : LocalArray[Variable],
+                             clauses : Vector[Clause]) : (int,int)
+    var index = -1
+    var i = clauses.size() - 1
+    while (i >= 0) do
+      val literals = clauses.at(i).literals
+      var j = literals.size() - 1
+      while (j >= 0) do
+        index = literalToVarIndex(literals.at(j))
+        if (variables.at(index).value == -1) then
+          return (index, -1)
+        end
+        j -= 1
+      end
+      i -=  1
+    end
+    return (index, -1)
+  end
+
+  def variableSelectionToString() : unit
+    println("Variable heuristic: Backwards in order literal selection")
+  end
+end
+
+{- Variable Forward -}
+class VarForwards : TVariableSelection
+  val id: uint = 2
+  val isVsid : bool = false
+
+  def getVariableSelection(variables : LocalArray[Variable],
+                           clauses : Vector[Clause]) : (int,int)
+    var index = -1
+    var i = 0
+    val iLimit = variables.size()
+    while (i < iLimit) do
+      val current = variables.at(i)
+      if (current.value == -1) then
+        index = i
+        break
+      end
+      i += 1
+    end
+    (index, -1)
+  end
+
+  def variableSelectionToString() : unit
+    println("Variable heuristic: Forward in order variable selection")
+  end
+end
+
+{- Variable Backwards -}
+class VarBackwards : TVariableSelection
+  val id: uint = 3
+  val isVsid : bool = false
+
+  def getVariableSelection(variables : LocalArray[Variable],
+                           clauses : Vector[Clause]) : (int,int)
+    var i = variables.size() - 1
+    val iLimit = 0
+    while (i >= iLimit) do
+      val current = variables.at(i)
+      if(current.value == -1) then
+        return (i, -1)
+      end
+      i -= 1
+    end
+    (-1, -1)
+  end
+
+  def variableSelectionToString() : unit
+    println("Variable heuristic: Backwards in order variable selection")
+  end
+end
+
+{- Largest unassigned clause -}
+class LargestUnassignedClause : TVariableSelection
+  val id: uint = 4
+  val isVsid : bool = false
+
+  def getVariableSelection(variables : LocalArray[Variable],
+                           clauses : Vector[Clause]) : (int,int)
+    var i = 0
+    val iLimit = clauses.size()
+    var final_clause = Nothing : Maybe[Clause]
+    var number_of_unassigned_literals = -1
+    var index = -1
+    var literal = -1
+    while (i < iLimit) do
+      val current_unassigned = this.nUnassignedLiterals(clauses.at(i),variables)
+      if((number_of_unassigned_literals < current_unassigned) && (current_unassigned >= 1)) then
+        final_clause = Just(clauses.at(i))
+        number_of_unassigned_literals = current_unassigned
+      end
+      i += 1
+    end
+
+    this.getUnassignedVariable(unjust(final_clause),variables)
+  end
+
+  def variableSelectionToString() : unit
+    println("Variable heuristic: Largest number of unassigned variables in clause")
+  end
+end
+
+{- Smallest unassigned clause -}
+class SmallestUnassignedClause : TVariableSelection
+  val id: uint = 5
+  val isVsid : bool = false
+
+  def getVariableSelection(variables : LocalArray[Variable],
+                           clauses : Vector[Clause]) : (int,int)
+    var i = 0
+    val iLimit = clauses.size()
+    var final_clause = Nothing : Maybe[Clause]
+    var number_of_unassigned_literals = 9223372036854775807
+    var index = -1
+    var literal = -1
+    while (i < iLimit) do
+      val current_unassigned = this.nUnassignedLiterals(clauses.at(i),variables)
+      if((number_of_unassigned_literals > current_unassigned) && (current_unassigned >= 1)) then
+        final_clause = Just(clauses.at(i))
+        number_of_unassigned_literals = current_unassigned
+      end
+      i = i + 1
+    end
+
+    this.getUnassignedVariable(unjust(final_clause),variables)
+  end
+
+  def variableSelectionToString() : unit
+    println("Variable heuristic: Smallest number of unassigned variables in clause")
+  end
+end
+
+{- VSIDS -}
+class VSIDS : TVariableSelection
+  val id: uint = 6
+  val isVsid : bool = true
+
+  -- TODO: fix this.
+  def getVariableSelection(variables : LocalArray[Variable],
+                           clauses : Vector[Clause]) : (int,int)
+    abort("Method implemented in Heuristics, depends on internal state")
+  end
+
+  def variableSelectionToString() : unit
+    println("Variable heuristic: VSIDS")
+  end
+end
+
+
+linear class VariableFactory
+  val array : RArray[TVariableSelection]
+
+  def init(): unit
+    var array = new Array[TVariableSelection](7)
+    array.set(0, new LitForwards())
+    array.set(1, new LitBackwards())
+    array.set(2, new VarForwards())
+    array.set(3, new VarBackwards())
+    array.set(4, new LargestUnassignedClause())
+    array.set(5, new SmallestUnassignedClause())
+    array.set(6, new VSIDS())
+    this.array = consume array
+  end
+
+  def get(x: int): TVariableSelection
+    this.array.at(x)
+  end
+end

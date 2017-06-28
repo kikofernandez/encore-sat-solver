@@ -9,6 +9,8 @@ import Heuristic
 import Util
 import LinearQueue
 import Array
+import ValueSelection
+import VariableSelection
 
 fun unjustH(var h : Maybe[Heuristic]) : Heuristic
   EMBED (Heuristic) #{h}->val.p; END
@@ -108,36 +110,57 @@ active class Main
     varsToAssign.toRArray()
   end
 
-  def private setupHeuristics(heuristics: LinearQueue[Heuristic], clauses: RVector[Clause], val nVars: int): unit
-    heuristics.enqueue(Just(new Heuristic(3,6, nVars, clauses))) -- VSIDS
-    heuristics.enqueue(Just(new Heuristic(0,0, nVars, clauses))) -- Literal false literal forward
-    heuristics.enqueue(Just(new Heuristic(0,5, nVars, clauses))) -- Literal false smallest
-    heuristics.enqueue(Just(new Heuristic(2,5, nVars, clauses))) -- Value random smallest
-    heuristics.enqueue(Just(new Heuristic(3,0, nVars, clauses))) -- Variable false literal forward
-    heuristics.enqueue(Just(new Heuristic(3,1, nVars, clauses))) -- Variable false literal back
-    heuristics.enqueue(Just(new Heuristic(4,6, nVars, clauses))) -- VSIDS
-    heuristics.enqueue(Just(new Heuristic(4,0, nVars, clauses))) -- Variable true literal forward
-    heuristics.enqueue(Just(new Heuristic(2,6, nVars, clauses))) -- VSIDS random
-    heuristics.enqueue(Just(new Heuristic(4,1, nVars, clauses))) -- Variable true literal back
-    heuristics.enqueue(Just(new Heuristic(1,4, nVars, clauses))) -- Literal true largest
-    heuristics.enqueue(Just(new Heuristic(0,1, nVars, clauses))) -- Literal false literal back
-    heuristics.enqueue(Just(new Heuristic(2,0, nVars, clauses))) -- Value random literal forward
-    heuristics.enqueue(Just(new Heuristic(2,1, nVars, clauses))) -- Value random literal back
-    heuristics.enqueue(Just(new Heuristic(0,4, nVars, clauses))) -- Literal false largest
-    heuristics.enqueue(Just(new Heuristic(1,0, nVars, clauses))) -- Literal true literal forward
-    heuristics.enqueue(Just(new Heuristic(2,2, nVars, clauses))) -- Value random variable forward
-    heuristics.enqueue(Just(new Heuristic(2,3, nVars, clauses))) -- Value random variable back
-    heuristics.enqueue(Just(new Heuristic(2,4, nVars, clauses))) -- Value random largest
-    heuristics.enqueue(Just(new Heuristic(3,2, nVars, clauses))) -- Variable false variable forward
-    heuristics.enqueue(Just(new Heuristic(4,4, nVars, clauses))) -- Variable true largest
-    heuristics.enqueue(Just(new Heuristic(3,3, nVars, clauses))) -- Variable false variable back
-    heuristics.enqueue(Just(new Heuristic(4,2, nVars, clauses))) -- Variable true variable forward
-    heuristics.enqueue(Just(new Heuristic(1,1, nVars, clauses))) -- Literal true literal back
-    heuristics.enqueue(Just(new Heuristic(1,5, nVars, clauses))) -- Literal true smallest
-    heuristics.enqueue(Just(new Heuristic(3,5, nVars, clauses))) -- Variable false smallest
-    heuristics.enqueue(Just(new Heuristic(4,3, nVars, clauses))) -- Variable true variable back
-    heuristics.enqueue(Just(new Heuristic(3,4, nVars, clauses))) -- Variable false largest
-    heuristics.enqueue(Just(new Heuristic(4,5, nVars, clauses))) -- Variable true smallest
+  def private setupHeuristics(heuristics: LinearQueue[Heuristic],
+                              clauses: RVector[Clause],
+                              val nVars: int,
+                              valsFactory: ValueFactory,
+                              varsFactory: VariableFactory): unit
+
+    -- value selection
+    val litFalse = valsFactory.get(0)
+    val litTrue = valsFactory.get(1)
+    val valRandom = valsFactory.get(2)
+    val varFalse = valsFactory.get(3)
+    val varTrue = valsFactory.get(4)
+
+    -- Variable Selection
+    val litForwards = varsFactory.get(0)
+    val litBackwards = varsFactory.get(1)
+    val varForwards = varsFactory.get(2)
+    val varBackwards = varsFactory.get(3)
+    val largestClause = varsFactory.get(4)
+    val smallestClause = varsFactory.get(5)
+    val vsids = varsFactory.get(6)
+
+    heuristics.enqueue(Just(new Heuristic(varFalse, vsids, nVars, clauses))) -- VSIDS
+    heuristics.enqueue(Just(new Heuristic(litFalse, litForwards, nVars, clauses))) -- Literal false literal forward
+    heuristics.enqueue(Just(new Heuristic(litFalse, smallestClause, nVars, clauses))) -- Literal false smallest
+    heuristics.enqueue(Just(new Heuristic(valRandom, smallestClause, nVars, clauses))) -- Value random smallest
+    heuristics.enqueue(Just(new Heuristic(varFalse, litForwards, nVars, clauses))) -- Variable false literal forward
+    heuristics.enqueue(Just(new Heuristic(varFalse, litBackwards, nVars, clauses))) -- Variable false literal back
+    heuristics.enqueue(Just(new Heuristic(varTrue, vsids, nVars, clauses))) -- VSIDS
+    heuristics.enqueue(Just(new Heuristic(varTrue, litForwards, nVars, clauses))) -- Variable true literal forward
+    heuristics.enqueue(Just(new Heuristic(valRandom, vsids, nVars, clauses))) -- VSIDS random
+    heuristics.enqueue(Just(new Heuristic(varTrue, litBackwards, nVars, clauses))) -- Variable true literal back
+    heuristics.enqueue(Just(new Heuristic(litTrue, largestClause, nVars, clauses))) -- Literal true largest
+    heuristics.enqueue(Just(new Heuristic(litFalse, litBackwards, nVars, clauses))) -- Literal false literal back
+    heuristics.enqueue(Just(new Heuristic(valRandom, litForwards, nVars, clauses))) -- Value random literal forward
+    heuristics.enqueue(Just(new Heuristic(valRandom, litBackwards, nVars, clauses))) -- Value random literal back
+    heuristics.enqueue(Just(new Heuristic(litFalse, largestClause, nVars, clauses))) -- Literal false largest
+    heuristics.enqueue(Just(new Heuristic(litTrue, litForwards, nVars, clauses))) -- Literal true literal forward
+    heuristics.enqueue(Just(new Heuristic(valRandom, varForwards, nVars, clauses))) -- Value random variable forward
+    heuristics.enqueue(Just(new Heuristic(valRandom, varBackwards, nVars, clauses))) -- Value random variable back
+    heuristics.enqueue(Just(new Heuristic(valRandom, largestClause, nVars, clauses))) -- Value random largest
+    heuristics.enqueue(Just(new Heuristic(varFalse, varForwards, nVars, clauses))) -- Variable false variable forward
+    heuristics.enqueue(Just(new Heuristic(varTrue, largestClause, nVars, clauses))) -- Variable true largest
+    heuristics.enqueue(Just(new Heuristic(varFalse, varBackwards, nVars, clauses))) -- Variable false variable back
+    heuristics.enqueue(Just(new Heuristic(varTrue, varForwards, nVars, clauses))) -- Variable true variable forward
+    heuristics.enqueue(Just(new Heuristic(litTrue, litBackwards, nVars, clauses))) -- Literal true literal back
+    heuristics.enqueue(Just(new Heuristic(litTrue, smallestClause, nVars, clauses))) -- Literal true smallest
+    heuristics.enqueue(Just(new Heuristic(varFalse, smallestClause, nVars, clauses))) -- Variable false smallest
+    heuristics.enqueue(Just(new Heuristic(varTrue, varBackwards, nVars, clauses))) -- Variable true variable back
+    heuristics.enqueue(Just(new Heuristic(varFalse, largestClause, nVars, clauses))) -- Variable false largest
+    heuristics.enqueue(Just(new Heuristic(varTrue, smallestClause, nVars, clauses))) -- Variable true smallest
   end
 
   def main(args : [String]) : unit
@@ -159,8 +182,12 @@ active class Main
     var a = 1
     var restarts = -1 -- Number of conflicts before restarting, < 0 means no restars
     var heuristics = new LinearQueue[Heuristic]()
-    var customVals = new Vector[int](1)
-    var customVars = new Vector[int](1)
+
+    var valsFactory = new ValueFactory()
+    var customVals = new Vector[TValueSelection](1)
+
+    var varsFactory = new VariableFactory()
+    var customVars = new Vector[TVariableSelection](1)
 
     -- Update state via command line
     while (a < |args|) do
@@ -179,8 +206,8 @@ active class Main
                 print("Missing arguments for -heu, exiting.\n")
                 abort("")
               end
-              customVals.push(this.stringToInt(args(a + 1)))
-              customVars.push(this.stringToInt(args(a + 2)))
+              customVals.push(valsFactory.get(this.stringToInt(args(a + 1))))
+              customVars.push(varsFactory.get(this.stringToInt(args(a + 2))))
               a = a + 2
             end
           end
@@ -267,7 +294,7 @@ active class Main
     repeat i <- customVals.size() do
       heuristics.enqueue(Just(new Heuristic(customVals.at(i), customVars.at(i), nVars, clauses)))
     end
-    this.setupHeuristics(heuristics, clauses, nVars)
+    this.setupHeuristics(heuristics, clauses, nVars, consume valsFactory, consume varsFactory)
 
     WAMP("Creating Solver")
     var varsToAssign = this.preProcess(clauses, nVars)

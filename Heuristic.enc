@@ -7,43 +7,29 @@ import VVector
 import Vector
 import LocalArray
 import Array
+import ValueSelection
+import VariableSelection
 
-
-EMBED
-#include <time.h>
-#include <stdlib.h>
-int64_t getRandomValue();
-
-BODY
-
-  int64_t getRandomValue() {
-    srand(time(NULL)); //TODO seed only once
-    int64_t r = rand();
-    return r % 2;
-  }
-
-END
 
 linear class Heuristic
-  val valueSelection : int
-  val variableSelection : int
+  val valueSelection : TValueSelection
+  val variableSelection : TVariableSelection
   val branchOnVariable : bool
 
   val vsidsCounters : [real]
   val vsidsMax : int -- How many new clauses before decaying variables
-
   var vsidsCounter : int
 
-  def init(valueSelection : int, variableSelection : int, nVars : int, clauses : RVector[Clause]) : unit
+  def init(valueSelection : TValueSelection,
+           variableSelection : TVariableSelection,
+           nVars : int,
+           clauses : RVector[Clause]) : unit
     this.variableSelection = variableSelection
     this.valueSelection = valueSelection
-    if(((this.variableSelection > 1) && (this.variableSelection < 4)) || (this.variableSelection == 6)) then
-      if(this.valueSelection <  2) then
-        println("Illegal combination of value {} and variable {} heuristics.", valueSelection, variableSelection)
-        abort("")
-      end
-    end
-    if (variableSelection == 6) then -- VSIDS
+
+    checkCorrectness(variableSelection, valueSelection)
+
+    if (variableSelection.isVsid()) then -- VSIDS
       this.vsidsCounter = 0
       this.vsidsMax = 50
       this.vsidsCounters = new [real](nVars)
@@ -54,75 +40,62 @@ linear class Heuristic
         end
       end
     end
-  end
-
-  def getVariableSelection(variables : LocalArray[Variable], clauses : Vector[Clause]) : (int,int)
-    match this.variableSelection with
-      {- Literal Forward -}
-      case 0 => this.forwardLiteralInOrder(variables, clauses)
-      {- Literal Backwards -}
-      case 1 => this.backwardsLiteralInOrder(variables, clauses)
-      {- Variable Forward -}
-      case 2 => this.forwardVariableInOrder(variables)
-      {- Variable Backwards -}
-      case 3 => this.backwardsVariableInOrder(variables)
-      {- Largest unassigned clause -}
-      case 4 => this.largestUnassignedClause(variables, clauses)
-      {- Smallest unassigned clause -}
-      case 5 => this.smallestUnassignedClause(variables, clauses)
-      {- VSIDS -}
-      case 6 => this.vsids(variables)
+  where
+    fun checkCorrectness(variableSelection: TVariableSelection, valueSelection: TValueSelection): unit
+      val varId = variableSelection.getId()
+      val valId = valueSelection.getId()
+      if(((varId > 1) && (varId < 4)) || (varId == 6)) then
+        if(valId <  2) then
+          println("Illegal combination of value '{}' and variable '{}' heuristics.",
+                  valueSelection.valueSelectionToString(),
+                  variableSelection.variableSelectionToString())
+          abort("")
+        end
+      end
     end
   end
-
 
   def valueSelectionToString() : unit
-    match this.valueSelection with
-      {- Value heuristic is always set literal false -}
-      case 0 => println("Value heuristic: Always set literal false")
-      {- Value heuristic is always set literal true -}
-      case 1 => println("Value heuristic: Always set literal true")
-      {- Random heuristic -}
-      case 2 => println("Value heuristic: Random")
-      {- Aways set variable to false -}
-      case 3 =>  println("Value heuristic: Always set variable to false")
-      {- Aways set variable to true -}
-      case 4 =>  println("Value heuristic: Always set variable to true")
-    end
+    this.valueSelection.valueSelectionToString()
   end
 
-  -- TODO: debug method
+  def getVariableSelection(variables : LocalArray[Variable],
+                           clauses : Vector[Clause]) : (int,int)
+   if not this.variableSelection.isVsid() then
+     this.variableSelection.getVariableSelection(variables, clauses)
+   else
+     -- TODO: case for VSID. relies on internal state.
+     --       VSID has a mutable argument, which makes it incompatible
+     --       with TVariableSelection and TValueSelection trait
+     var cur = 0.0
+     var maxI = -1
+     var max = cur
+     repeat i <- |this.vsidsCounters| do
+       cur = this.vsidsCounters(i)
+       if ((cur >= max) && ((variables.at(i)).value == -1)) then
+         max = cur
+         maxI = i
+       end
+     end
+     (maxI, -1)
+   end
+  end
+
   def variableSelectionToString() : unit
-    match this.variableSelection with
-      case 0 => println("Variable heuristic: Forward in order literal selection")
-      case 1 =>  println("Variable heuristic: Backwards in order literal selection")
-      case 2 =>  println("Variable heuristic: Forward in order variable selection")
-      case 3 =>  println("Variable heuristic: Backwards in order variable selection")
-      case 4 =>  println("Variable heuristic: Largest number of unassigned variables in clause")
-      case 5 =>  println("Variable heuristic: Smallest number of unassigned variables in clause")
-      case 6 =>  println("Variable heuristic: VSIDS")
-    end
+    this.variableSelection.variableSelectionToString()
   end
 
-  -- TODO: pure method that relies on internal state
   def getValueSelection(literal : int) : int
-    match this.valueSelection with
-      {- Value heuristic is always set literal false -}
-      case 0 => literal % 2
-      {- Value heuristic is always set literal true -}
-      case 1 => (literal + 1) % 2
-      {- Random heuristic -}
-      case 2 => EMBED (int) getRandomValue(); END
-      {- Value heuristic is always set variable false -}
-      case 3 => 0
-      {- Value heuristic is always set variable true -}
-      case 4 => 1
-    end
+    this.valueSelection.getValueSelection(literal : int)
   end
 
   -- Only for VSIDS
+  -- TODO: ideally this would be enclosed in the VSID class.
+  --       VSID has a mutable argument, which makes it incompatible
+  --       with TVariableSelection and TValueSelection trait
   def addConflictClause(clause : Clause) : unit
-    if (this.variableSelection == 6) then
+
+    if (this.variableSelection.getId() == 6) then
       val literals = clause.literals
       repeat j <- literals.size() do
         this.vsidsCounters(literals.at(j) / 2) += 1.0
@@ -135,164 +108,5 @@ linear class Heuristic
         end
       end
     end
-  end
-
-  -- TODO: pure function but relies on internal state
-  def private vsids(variables : LocalArray[Variable]) : (int,int)
-    var cur = 0.0
-    var maxI = -1
-    var max = cur
-    repeat i <- |this.vsidsCounters| do
-      cur = this.vsidsCounters(i)
-      if ((cur >= max) && ((variables.at(i)).value == -1)) then
-        max = cur
-        maxI = i
-      end
-    end
-    (maxI, -1)
-  end
-
-  -- NOTE: pure function
-  def private forwardVariableInOrder(variables : LocalArray[Variable]) : (int,int)
-    var index = -1
-    var i = 0
-    val iLimit = variables.size()
-    while (i < iLimit) do
-      val current = variables.at(i)
-      if (current.value == -1) then
-        index = i
-        break
-      end
-      i += 1
-    end
-    (index, -1)
-  end
-
-  -- NOTE: pure function
-  def private backwardsVariableInOrder(variables : LocalArray[Variable]) : (int,int)
-    var i = variables.size() - 1
-    val iLimit = 0
-    while (i >= iLimit) do
-      val current = variables.at(i)
-      if(current.value == -1) then
-        return (i, -1)
-      end
-      i -= 1
-    end
-    (-1, -1)
-  end
-
-  -- NOTE: pure function
-  def private backwardsLiteralInOrder(variables : LocalArray[Variable], clauses : Vector[Clause]) : (int,int)
-    var index = -1
-    var i = clauses.size() - 1
-    while (i >= 0) do
-      val literals = clauses.at(i).literals
-      var j = literals.size() - 1
-      while (j >= 0) do
-        index = literalToVarIndex(literals.at(j))
-        if (variables.at(index).value == -1) then
-          return (index, -1)
-        end
-        j -= 1
-      end
-      i -=  1
-    end
-    return (index, -1)
-  end
-
-  -- TODO: Pure function, doesn't cause mutation
-  def private forwardLiteralInOrder(variables : LocalArray[Variable], clauses : Vector[Clause]) : (int,int)
-    var index = -1
-    var i = 0
-    val iLimit = clauses.size()
-    var literal = -1
-    while (i < iLimit) do
-      val literals = clauses.at(i).literals
-      var j = 0
-      val jLimit = literals.size()
-      while (j < jLimit) do
-        literal = literals.at(j)
-        index = literalToVarIndex(literal)
-        val vara = variables.at(index)
-        if (vara.value == -1) then
-          return (index, literal)
-        end
-        j += 1
-      end
-      i += 1
-    end
-    return (index, literal)
-  end
-
-  -- TODO: pure function
-  def private nUnassignedLiterals(clause : Clause, variables : LocalArray[Variable]) : int
-    var nUnassigned = 0
-    repeat i <- clause.literals.size() do
-      if((variables.at(literalToVarIndex(clause.literals.at(i)))).value == -1) then
-        nUnassigned = nUnassigned + 1
-      end
-    end
-    nUnassigned
-  end
-
-  -- TODO: pure function
-  def private getUnassignedVariable(clause : Clause, variables : LocalArray[Variable]) : (int,int)
-    var index = 0
-    var i = 0
-    while (i < clause.literals.size()) do
-      index = literalToVarIndex(clause.literals.at(i))
-      if((variables.at(index)).value == -1) then
-        return (index, clause.literals.at(i))
-      end
-      i += 1
-      if (i == clause.literals.size()) then
-        return (index, 0)
-      end
-    end
-    (index, 0)
-  end
-
-  -- TODO: pure function when `this.nUnassignedLiterals(clauses.at(i),variables)`
-  --       is extracted into its own function -- this method is also pure.
-  def private largestUnassignedClause(variables : LocalArray[Variable], clauses : Vector[Clause]) : (int,int)
-    var i = 0
-    val iLimit = clauses.size()
-    var final_clause = Nothing : Maybe[Clause]
-    var number_of_unassigned_literals = -1
-    var index = -1
-    var literal = -1
-    while (i < iLimit) do
-      val current_unassigned = this.nUnassignedLiterals(clauses.at(i),variables)
-      if((number_of_unassigned_literals < current_unassigned) && (current_unassigned >= 1)) then
-        final_clause = Just(clauses.at(i))
-        number_of_unassigned_literals = current_unassigned
-      end
-      i += 1
-    end
-
-    this.getUnassignedVariable(unjust(final_clause),variables)
-  end
-
-  -- TODO: pure function when `this.nUnassignedLiterals(clauses.at(i),variables)` et al
-  --       are extracted into their own function -- the methods that call on `this.XXX`
-  --       are all pure, i.e. depend only on their inputs
-  def private smallestUnassignedClause(variables : LocalArray[Variable], clauses : Vector[Clause]) : (int,int)
-    var i = 0
-    val iLimit = clauses.size()
-    var final_clause = Nothing : Maybe[Clause]
-    var number_of_unassigned_literals = 9223372036854775807
-    var index = -1
-    var literal = -1
-    while (i < iLimit) do
-      val current_unassigned = this.nUnassignedLiterals(clauses.at(i),variables)
-      if((number_of_unassigned_literals > current_unassigned) && (current_unassigned >= 1)) then
-        final_clause = Just(clauses.at(i))
-        number_of_unassigned_literals = current_unassigned
-      end
-      i = i + 1
-    end
-
-    this.getUnassignedVariable(unjust(final_clause),variables)
   end
 end

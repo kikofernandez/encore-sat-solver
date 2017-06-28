@@ -261,9 +261,7 @@ active class CDCL
     else
       vara -= 1
     end
-    if ((conflictClause.literals.size() == 1) &&
-        ((this.assignments.variables.at(vara)).setByBranching))
-    then
+    if ((conflictClause.literals.size() == 1) && ((this.assignments.variables.at(vara)).setByBranching)) then
       backtrackDL = (this.assignments.variables.at(vara)).dL
     else
       repeat i <- conflictClause.literals.size() do

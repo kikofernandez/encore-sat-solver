@@ -1,0 +1,117 @@
+module ValueSelection
+
+import Array
+
+EMBED
+#include <time.h>
+#include <stdlib.h>
+int64_t getRandomValue();
+
+BODY
+
+  int64_t getRandomValue() {
+    srand(time(NULL)); //TODO seed only once
+    int64_t r = rand();
+    return r % 2;
+  }
+
+END
+
+read trait TValueSelection
+  require val id: uint
+  require def valueSelectionToString() : unit
+  require def getValueSelection(literal : int) : int
+
+  def getId(): uint
+    this.id
+  end
+end
+
+class LiteralFalse : TValueSelection
+  val id: uint = 0
+
+  def valueSelectionToString() : unit
+    {- Value heuristic is always set literal false -}
+    println("Value heuristic: Always set literal false")
+  end
+
+  def getValueSelection(literal : int) : int
+    {- Value heuristic is always set literal false -}
+    literal % 2
+  end
+end
+
+class LiteralTrue : TValueSelection
+  val id: uint = 1
+
+  def valueSelectionToString() : unit
+    {- Value heuristic is always set literal true -}
+    println("Value heuristic: Always set literal true")
+  end
+
+  def getValueSelection(literal : int) : int
+    {- Value heuristic is always set literal true -}
+    (literal + 1) % 2
+  end
+end
+
+class ValueRandom : TValueSelection
+  val id: uint = 2
+
+  def valueSelectionToString() : unit
+    {- Random heuristic -}
+    println("Value heuristic: Random")
+  end
+
+  def getValueSelection(literal : int) : int
+    {- Random heuristic -}
+    EMBED (int) getRandomValue(); END
+  end
+end
+
+class VariableFalse : TValueSelection
+  val id: uint = 3
+
+  def valueSelectionToString() : unit
+    {- Aways set variable to false -}
+    println("Value heuristic: Always set variable to false")
+  end
+
+  def getValueSelection(literal : int) : int
+    {- Value heuristic is always set variable false -}
+    0
+  end
+end
+
+class VariableTrue : TValueSelection
+  val id: uint = 4
+
+  def valueSelectionToString() : unit
+    {- Aways set variable to true -}
+    println("Value heuristic: Always set variable to true")
+  end
+
+  def getValueSelection(literal : int) : int
+    {- Value heuristic is always set variable true -}
+    1
+  end
+end
+
+
+linear class ValueFactory
+  val array : RArray[TValueSelection]
+
+  def init(): unit
+    var array = new Array[TValueSelection](5)
+    array.set(0, new LiteralFalse())
+    array.set(1, new LiteralTrue())
+    array.set(2, new ValueRandom())
+    array.set(3, new VariableFalse())
+    array.set(4, new VariableTrue())
+    this.array = consume array
+  end
+
+  def get(x: int): TValueSelection
+    this.array.at(x)
+  end
+end

@@ -16,9 +16,9 @@ active class CDCL
   val heuristics : Heuristic
   var assignments : Assignments
   val instance : Instance
-  var dL : int -- TODO: what is a DL
-  var nConflicts : int
-  var nReceivedConflicts : int
+  var dL : int = 0
+  var nConflicts : int = 0
+  var nReceivedConflicts : int = 0
   val originalNOfClauses : int
   var latestConflictClause : Clause
   val solverId : int
@@ -37,41 +37,22 @@ active class CDCL
     (this.nConflicts, this.nReceivedConflicts)
   end
 
-  def init(clauses : RVector[Clause], nVars : int, varsToAssign : RArray[int], var heuristics : Heuristic, solverId : int) : unit
+  def init(clauses : RVector[Clause], nVars : int, varsToAssign : RArray[int],
+           var heuristics : Heuristic, solverId : int) : unit
     this.assignments = new Assignments(nVars*2, varsToAssign)
     this.originalNOfClauses = clauses.size()
     this.instance = new Instance(clauses, nVars*2)
-    this.dL = 0
-    this.nConflicts = 0
-    this.nReceivedConflicts = 0
     this.heuristics = consume heuristics
     this.solverId = solverId
     this.nVars = nVars
     this.varsToAssign = varsToAssign
   end
 
-  -- def printClauses() : unit
-  --   repeat n <- this.instance.clauses.size() do
-  --     if (n == this.originalNOfClauses) then
-  --       print("Conflict clauses:")
-  --     end
-  --     this.instance.clauses.at(n).toString()
-  --   end
-  -- end
-
-  -- def pause() : unit
-  --   EMBED (unit) fgetc(stdin); END
-  -- end
-
-  -- def getInstance() : Instance
-  --   this.instance
-  -- end
-
+  -- public methods
   def getAssignments() : FinalAssignment
     this.assignments.finalAssignment()
   end
 
--- public methods
   def restart() : unit
     println("Solver {} restarted.", this.solverId)
     this.dL = 0
@@ -98,15 +79,17 @@ active class CDCL
         val indexAndLiteral = this.heuristics.getVariableSelection(this.assignments.getVariables(), this.instance.clauses)
         val varIndex = indexAndLiteral.0
         val value = this.heuristics.getValueSelection(indexAndLiteral.1)
-        this.dL = this.dL + 1
-        this.assignments.guessVariable(varIndex, value, this.dL, false)
+        this.dL += 1
+        this.assignments.guessVariable(varIndex, value, this.dL)
       end
     else -- CONFLICT
       conflict = true
-      this.nConflicts = this.nConflicts + 1
+      this.nConflicts += 1
+
       if (this.nConflicts % 100 == 0) then
         println("Number of conflicts: {}", this.nConflicts)
       end
+
       val backtrackDL = this.conflictAnalysis(this.dL)
       if (backtrackDL < 0) then
         solveable = false
@@ -334,12 +317,12 @@ active class CDCL
     end
     toBeConflictClause
   end
-  
+
   def variableSelectionToString() : unit
     this.heuristics.variableSelectionToString()
   end
-  
+
   def valueSelectionToString() : unit
-    this.heuristics.valueSelectionToString()  
+    this.heuristics.valueSelectionToString()
   end
 end

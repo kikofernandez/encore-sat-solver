@@ -29,7 +29,7 @@ end
 local class Assignments
   -- public attributes
   var nSetVars : int
-  
+
   -- private attributes
   val variables : LocalArray[Variable]
 
@@ -112,7 +112,7 @@ local class Assignments
     this.nSetVars = this.nSetVars + 1
   end
 
-  def guessVariable(index :  int, value : int, dL : int, setByBranching : bool) : unit
+  def guessVariable(index :  int, value : int, dL : int, setByBranching : bool = false) : unit
     -- TODO: precondition: this.variables.size() >= (index*2)+1
     val index1 = index*2
     val index2 = index1+1

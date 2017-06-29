@@ -40,6 +40,11 @@ active class Main
       this.isSolved
   end
 
+  def isSolvedProtocol1(s: Solver, solveable: bool, done: bool) : unit
+    WAMP("isSolvedProtocol1")
+    s!solveProtocol2(this.isSolved, solveable, done)
+  end
+
   def charToInt(c : char) : int
     if (c == '0') then
       0

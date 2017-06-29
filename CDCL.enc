@@ -10,6 +10,7 @@ import Heuristic
 import ImplicationGraph
 import Array
 import LocalArray
+import Solver
 
 active class CDCL
 -- private attributes
@@ -65,6 +66,16 @@ active class CDCL
 
   def getSetVars() : int
     this.assignments.nSetVars
+  end
+
+  def solveProtocol3(s: Solver): unit
+    WAMP("solveProtocol3")
+    s!solveProtocol4(this.solve())
+  end
+
+  def getLatestConflictClauseProtocol5(solver: Solver, s: bool, d: bool): unit
+    WAMP("solveProtocol5")
+    solver!solveProtocol6(this.getLatestConflictClause(), s, d)
   end
 
   def solve() : (bool, bool, bool)

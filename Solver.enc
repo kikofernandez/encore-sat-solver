@@ -8,6 +8,7 @@ import CDCL
 import Assignments
 import Util
 import Array
+import Util
 
 active class Solver
   val n_vars : int
@@ -78,48 +79,57 @@ active class Solver
     end
   end
 
-  -- TODO: much work to eliminate the gets
-  def loop(var solveable : bool, var done : bool) : unit
-    WAMP("Starting Loop.")
-    var i = 0
-    var shouldEnd = false
-    while (i < this.iterations) do
-      WAMP("Iterating")
-      -- TODO: bad design. blocking in a while loop...
-      if solveable && not done && not get(this.master!getIsSolved()) then
-        val res = get(this.cdcl!solve())
-        solveable = res.0
-        done = res.1
-        if res.2 then
-          if this.ccNum == -1 || this.ccSent < this.ccNum then
-            val conflictClause = get(this.cdcl!getLatestConflictClause())
-            if this.ccLength == -1 || conflictClause.size() <= this.ccLength then
-              this.ccCounter += 1
-              if this.ccCounter % this.ccM == 0 then
-                this.master ! addConflictClause(conflictClause, this.solverId)
-                this.ccSent += 1
-              end
-            end
-          end
-          this.restartCounter += 1
-          if this.restartCounter == this.restartCounterMax then
-            this.restartCounter = 0
-            this.cdcl!restart()
-          end
-        end
+  def solveProtocol2(solved: bool, solveable: bool, done: bool): unit
+    WAMP("solveProtocol2")
+    if (solveable && not done && not solved) then
+      this.cdcl!solveProtocol3(this)
+    else
+      WAMP("finishloop")
+      this.finishLoop(solveable)
+    end
+  end
+
+  def solveProtocol4(res: (bool, bool, bool)): unit
+    WAMP("solveProtocol4")
+    val solveable = res.0 -- solvable
+    val done = res.1 -- done
+    if res.2 then -- conflict
+      if this.ccNum == -1 || this.ccSent < this.ccNum then
+        this.cdcl!getLatestConflictClauseProtocol5(this, solveable, done)
+        return ()
       else
-        i = this.iterations -- break
-        shouldEnd = true
-        this.finishLoop(solveable)
+        return this.restart(solveable, done) -- restart always together with return
       end
-      i = i + 1
     end
-    WAMP("Out bottom of iteration")
-    if not shouldEnd then
-      val solver = this
-      solver ! loop(solveable, done) -- send message to self to allow gc,
-                                     -- and addConflictClause to run
+    return this.loop(solveable, done)
+  end
+
+  def solveProtocol6(conflictClause: Clause, solveable : bool, done : bool): unit
+    WAMP("solveProtocol6")
+    if this.ccLength == -1 || conflictClause.size() <= this.ccLength then
+      this.ccCounter += 1
+      if this.ccCounter % this.ccM == 0 then
+        this.master ! addConflictClause(conflictClause, this.solverId)
+        this.ccSent += 1
+      end
     end
+    this.restart(solveable, done)
+  end
+
+  def restart(solveable: bool, done: bool): unit
+    this.restartCounter += 1
+    if this.restartCounter == this.restartCounterMax then
+      this.restartCounter = 0
+      this.cdcl!restart()
+    end
+    this.loop(solveable, done)
+  end
+
+  -- TODO: much work to eliminate the gets
+  def loop(solveable : bool, done : bool) : unit
+    WAMP("Starting Loop.")
+    WAMP("Iterating")
+    this.master!isSolvedProtocol1(this, solveable, done)
   end
 
   def addConflictClause(conflictClause : Clause) : unit

@@ -45,6 +45,10 @@ active class Main
     s!solveProtocol2(this.isSolved, solveable, done)
   end
 
+  def isSolvedProtocolFinish(s: Solver, solveable: bool): unit
+    s!finishLoop2(this.getIsSolved(), solveable)
+  end
+
   def charToInt(c : char) : int
     if (c == '0') then
       0

@@ -51,32 +51,34 @@ active class Solver
 
   -- TODO: some work to elimate the gets
   def finishLoop(solveable : bool) : unit
-    if not get(this.master!getIsSolved()) then
+    this.master!isSolvedProtocolFinish(this, solveable)
+  end
+
+  def finishLoop2(isSolved: bool, solveable: bool): unit
+    if not isSolved then
       if solveable then
         this.master!setSolved()
         println("Satisfiable!")
-        val correct = get(this.cdcl!checkCorrectness())
-        if correct && solveable then
-          println("Solution is correct, and was found by solver number {}:", this.solverId)
-	  -- TODO: make this one call!
-          get(this.cdcl!variableSelectionToString())
-          get(this.cdcl!valueSelectionToString())
-        else
-          println("Solution is incorrect.")
-        end
-
-	-- TODO: make these one call (probably just return all results
-	-- from CDCL in one object)
-        val conflicts = get(this.cdcl!getAllConflicts())
-        val assignments = get(this.cdcl!getAssignments())
-        val nSetVars = get(this.cdcl!getSetVars())
-        assignments.toString()
-        println("Number of own conflicts: {}, number of received conflicts {}", conflicts.0, conflicts.1)
-        println("")
+        this.cdcl!checkCorrectness3(this, solveable)
       else
         println("Problem found unsatisfiable by solver {}", this.solverId)
       end
     end
+  end
+
+  def finishLoop3(correct: bool, solveable: bool): unit
+    if correct && solveable then
+      println("Solution is correct, and was found by solver number {}:", this.solverId)
+      -- TODO: make this one call!
+      this.cdcl!variableAndValueSelectionString(this)
+    else
+      println("Solution is incorrect.")
+      this.finishLoop4()
+    end
+  end
+
+  def finishLoop4(): unit
+    this.cdcl!getAll()
   end
 
   def solveProtocol2(solved: bool, solveable: bool, done: bool): unit

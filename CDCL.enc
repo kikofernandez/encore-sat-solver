@@ -78,6 +78,25 @@ active class CDCL
     solver!solveProtocol6(this.getLatestConflictClause(), s, d)
   end
 
+  def checkCorrectness3(s: Solver, solveable: bool): unit
+    s!finishLoop3(this.checkCorrectness(), solveable)
+  end
+
+  def variableAndValueSelectionString(s: Solver): unit
+      this.variableSelectionToString()
+      this.valueSelectionToString()
+      s!finishLoop4()
+  end
+
+  def getAll(): unit
+    val conflicts = this.getAllConflicts()
+    val assignments = this.getAssignments()
+    val nSetVars = this.getSetVars()
+    assignments.toString()
+    println("Number of own conflicts: {}, number of received conflicts {}", conflicts.0, conflicts.1)
+    println("")
+  end
+
   def solve() : (bool, bool, bool)
     WAMP("In CDCL.solve()")
     var solveable = true

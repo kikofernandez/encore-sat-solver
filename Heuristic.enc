@@ -1,15 +1,13 @@
 module Heuristic
 
-import Util
-import Assignments
-import Clause
-import VVector
-import Vector
-import LocalArray
-import Array
-import ValueSelection
-import VariableSelection
-
+import Assignments (Variable)
+import Clause (Clause)
+import VVector (RVector)
+import Vector (Vector)
+import LocalArray (LocalArray)
+import Array (RArray)
+import ValueSelection (TValueSelection)
+import VariableSelection (TVariableSelection)
 
 linear class Heuristic
   val valueSelection : TValueSelection

@@ -246,7 +246,7 @@ active class CDCL
     noConflict
   end
 
-  def conflictAnalysis(dL : int) : int
+  def private conflictAnalysis(dL : int) : int
     val conflictNode = this.instance.implicationGraph.getLatestConflict()
     val conflictLiterals = this.DFS(conflictNode)
     val clauseToconvertToConflict = new Clause(conflictLiterals.toArray())

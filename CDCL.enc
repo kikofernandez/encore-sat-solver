@@ -72,6 +72,7 @@ active class CDCL
     var solveable = true
     var done = false
     var conflict = false
+    -- NOTE: important method unitPropagation
     if (this.unitPropagation(this.dL)) then -- NO CONFLICT
       if (this.allVariablesAssigned()) then
         done = true
@@ -90,6 +91,7 @@ active class CDCL
         println("Number of conflicts: {}", this.nConflicts)
       end
 
+      -- NOTE: conflictAnalysis can backjump backtrack more than one literal at a time.
       val backtrackDL = this.conflictAnalysis(this.dL)
       if (backtrackDL < 0) then
         solveable = false
@@ -175,6 +177,7 @@ active class CDCL
 
   -- TODO: (kiko) look at it in a bigger screen
   -- returns false if conflict is found, otherwise true
+  -- dL: decision literal
   def private unitPropagation(dL : int) : bool
     WAMP("In CDCL.unitPropagation()")
     val literalsToAssign = new Vector[int](10)
@@ -200,26 +203,29 @@ active class CDCL
           val clause = this.instance.clauses.at(i)
           var literalToProp = -1
           val unitClauseV = new Vector[int](clause.literals.size())
-          var j = 0
-          val jLimit = clause.literals.size()
+
           var loop = true
-          while (loop && (j < jLimit)) do
+
+          repeat j <- clause.literals.size() do
             val literal = clause.literals.at(j)
             val vara = variables.at(literal)
             if (vara.value == -1) then
+              -- is literalToProp the last literal? If not, we can break.
               if (literalToProp == -1) then
                 literalToProp = literal
+                -- break -- TODO: is this one correct?
               else
                 loop = false
+                break
               end
             else
               if (literal % 2 + vara.value == 1) then
                 loop = false
+                break
               else
                 unitClauseV.push(literal)
               end
             end
-            j = j + 1
           end
           if ((literalToProp != -1) && loop) then
             var value = -1

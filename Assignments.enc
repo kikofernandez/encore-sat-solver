@@ -8,7 +8,7 @@ import LocalArray
 local class Variable
   -- public attributes
   var value : int = -1
-  var dL : int = -1
+  var dL : int = -1 -- decision literal
   var setByBranching : bool = false
   var guessedValue : int = -1
   var visited : bool = false

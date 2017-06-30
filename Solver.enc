@@ -82,7 +82,6 @@ active class Solver
   def loop(var solveable : bool, var done : bool) : unit
     WAMP("Starting Loop.")
     var i = 0
-    var shouldEnd = false
     while (i < this.iterations) do
       WAMP("Iterating")
       -- TODO: bad design. blocking in a while loop...
@@ -90,7 +89,7 @@ active class Solver
         val res = get(this.cdcl!solve())
         solveable = res.0
         done = res.1
-        if res.2 then
+        if res.2 then -- conflict
           if this.ccNum == -1 || this.ccSent < this.ccNum then
             val conflictClause = get(this.cdcl!getLatestConflictClause())
             if this.ccLength == -1 || conflictClause.size() <= this.ccLength then
@@ -108,18 +107,14 @@ active class Solver
           end
         end
       else
-        i = this.iterations -- break
-        shouldEnd = true
-        this.finishLoop(solveable)
+        return this.finishLoop(solveable)
       end
-      i = i + 1
+      i += 1
     end
     WAMP("Out bottom of iteration")
-    if not shouldEnd then
-      val solver = this
-      solver ! loop(solveable, done) -- send message to self to allow gc,
-                                     -- and addConflictClause to run
-    end
+    val solver = this
+    solver ! loop(solveable, done) -- send message to self to allow gc,
+                                   -- and addConflictClause to run
   end
 
   def addConflictClause(conflictClause : Clause) : unit

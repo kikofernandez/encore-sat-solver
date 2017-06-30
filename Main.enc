@@ -14,10 +14,6 @@ import VariableSelection
 
 fun unjustH(var h : Maybe[Heuristic]) : Heuristic
   EMBED (Heuristic) #{h}->val.p; END
---  match consume h with
---    case Just(ice) => ice
---    case Nothing => abort("There is no justice")
---  end
 end
 
 active class Main
@@ -300,20 +296,46 @@ active class Main
     var varsToAssign = this.preProcess(clauses, nVars)
     this.solvers = new [Solver](numSolvers)
 
-    val futs = new [Fut[unit]](numSolvers)
     repeat i <- numSolvers do
       this.solvers(i) = new Solver(parser.getClauses(), parser.getnVariables(), varsToAssign, unjustH(heuristics.dequeue()), this, i, ccLength, iterations, ccNumber, ccM, restarts)
     end
+
+    val futs = new [Fut[Maybe[(int, int, RArray[int])]]](numSolvers)
     repeat i <- numSolvers do
-      val solver = this.solvers(i)
       WAMP("Calling Start")
-      futs(i) = solver!start()
+      futs(i) = this.solvers(i)!start()
+    end
+    repeat i <- numSolvers do
+      await(futs(i))
     end
 
-    for f <- futs do
-      -- TODO: need a better way of synchronising multiple futures
-      await(f)
+    repeat i <- numSolvers do
+      println("Solver number: {}", i)
+      match get(futs(i)) with
+        case Nothing => ()
+        case Just(x) => printFinalResult(x.0, x.1, x.2)
+      end
     end
+
     WAMP("Out the bottom")
+  where
+    fun printFinalResult(conflicts: int, receivedConflicts: int, arr: RArray[int]): unit
+      println("Size: {}", arr.size())
+      repeat i <- arr.size() do
+        if arr.at(i) == 0 then
+          print("{}", "-")
+        else if arr.at(i) == -1 then
+          print("{}", "UNSAT")
+        end
+        print("x{} ", i+1)
+        if ((i + 1) * 2) % 5 == 0 then
+          println("")
+        end
+      end
+
+      println("Number of own conflicts: {}, number of received conflicts {}", conflicts, receivedConflicts)
+      println("")
+      EMBED (unit) exit(0); END
+    end
   end
 end

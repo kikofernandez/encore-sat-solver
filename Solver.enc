@@ -41,57 +41,53 @@ active class Solver
     this.restartCounterMax = restart
   end
 
-  def start() : unit
-    val solveable = true
+  def start() : Maybe[(int, int, Array[int])]
+    val solveable = Nothing : Maybe[bool]
     val done = false
     WAMP("Started Solver.")
     this.loop(solveable, done)
   end
 
   -- TODO: some work to elimate the gets
-  def finishLoop(solveable : bool) : unit
+  def finishLoop(solveable : Maybe[bool]) : Maybe[(int, int, Array[int])]
     if not get(this.master!getIsSolved()) then
-      if solveable then
-        this.master!setSolved()
-        println("Satisfiable!")
-        val correct = get(this.cdcl!checkCorrectness())
-        if correct && solveable then
-          println("Solution is correct, and was found by solver number {}:", this.solverId)
-	  -- TODO: make this one call!
-          get(this.cdcl!variableSelectionToString())
-          get(this.cdcl!valueSelectionToString())
-        else
-          println("Solution is incorrect.")
-        end
+      match solveable with
+        case Just(false) => println("Problem found unsatisfiable by solver {}", this.solverId)
+        case Just(true) =>
+          do
+            this.master!setSolved()
+            println("Satisfiable!")
+            val correct = this.cdcl.checkCorrectness()
+            if correct then
+              println("Solution is correct, and was found by solver number {}:", this.solverId)
+              this.cdcl.variableValueSelectionPrint()
+            else
+              println("Solution is incorrect.")
+            end
 
-	-- TODO: make these one call (probably just return all results
-	-- from CDCL in one object)
-        val conflicts = get(this.cdcl!getAllConflicts())
-        val assignments = get(this.cdcl!getAssignments())
-        val nSetVars = get(this.cdcl!getSetVars())
-        assignments.toString()
-        println("Number of own conflicts: {}, number of received conflicts {}", conflicts.0, conflicts.1)
-        println("")
-      else
-        println("Problem found unsatisfiable by solver {}", this.solverId)
+            val conflicts = this.cdcl.getAllConflicts()
+            return Just((conflicts.0, conflicts.1, this.cdcl.getFinalAssignments()))
+          end
+        end
+        case Nothing => abort("Error: entered in finishLoop but no result was found")
       end
     end
+    Nothing
   end
 
   -- TODO: much work to eliminate the gets
-  def loop(var solveable : bool, var done : bool) : unit
+  def loop(var solveable : Maybe[bool], var done : bool) : Maybe[(int, int, Array[int])]
     WAMP("Starting Loop.")
     var i = 0
     while (i < this.iterations) do
       WAMP("Iterating")
       -- TODO: bad design. blocking in a while loop...
-      if solveable && not done && not get(this.master!getIsSolved()) then
-        val res = get(this.cdcl!solve())
+      if isUnknown(solveable) && not get(this.master!getIsSolved()) then
+        val res = this.cdcl.solve()
         solveable = res.0
-        done = res.1
-        if res.2 then -- conflict
+        if res.1 then -- conflict
           if this.ccNum == -1 || this.ccSent < this.ccNum then
-            val conflictClause = get(this.cdcl!getLatestConflictClause())
+            val conflictClause = this.cdcl.getLatestConflictClause()
             if this.ccLength == -1 || conflictClause.size() <= this.ccLength then
               this.ccCounter += 1
               if this.ccCounter % this.ccM == 0 then
@@ -114,9 +110,20 @@ active class Solver
       i += 1
     end
     WAMP("Out bottom of iteration")
-    val solver = this
-    solver ! loop(solveable, done) -- send message to self to allow gc,
+    if not get(this.master!getIsSolved()) then
+      this.suspend()
+      this.loop(solveable, done) -- send message to self to allow gc,
                                    -- and addConflictClause to run
+    else
+      Nothing
+    end
+  where
+    fun isUnknown(solveable: Maybe[bool]): bool
+      match solveable with
+        case Nothing => true
+        case Just(x) => false
+      end
+    end
   end
 
   def private shouldRestart(): bool
@@ -125,10 +132,10 @@ active class Solver
 
   def private applyRestart(): unit
     this.restartCounter = 0
-    this.cdcl!restart()
+    this.cdcl.restart()
   end
 
   def addConflictClause(conflictClause : Clause) : unit
-    this.cdcl!addConflictClause(conflictClause)
+    this.cdcl.addConflictClause(conflictClause)
   end
 end

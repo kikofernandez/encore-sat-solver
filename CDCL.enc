@@ -11,7 +11,7 @@ import ImplicationGraph
 import Array
 import LocalArray
 
-active class CDCL
+local class CDCL
 -- private attributes
   val heuristics : Heuristic
   var assignments : Assignments
@@ -49,7 +49,7 @@ active class CDCL
   end
 
   -- public methods
-  def getAssignments() : FinalAssignment
+  def getFinalAssignments() : Array[int]
     this.assignments.finalAssignment()
   end
 
@@ -67,16 +67,16 @@ active class CDCL
     this.assignments.nSetVars
   end
 
-  def solve() : (bool, bool, bool)
+  def solve() : (Maybe[bool], bool)
     WAMP("In CDCL.solve()")
-    var solveable = true
-    var done = false
+    var solveable = Nothing : Maybe[bool]
+    -- var done = false
     var conflict = false
 
     -- NOTE: important method unitPropagation
     if (this.unitPropagation(this.dL)) then -- NO CONFLICT
       if (this.allVariablesAssigned()) then
-        done = true
+        solveable = Just(true)
       else
         val indexAndLiteral = this.heuristics.getVariableSelection(this.assignments.getVariables(), this.instance.clauses)
         val varIndex = indexAndLiteral.0
@@ -95,14 +95,14 @@ active class CDCL
       -- NOTE: conflictAnalysis can backjump backtrack more than one literal at a time.
       val backtrackDL = this.conflictAnalysis(this.dL)
       if (backtrackDL < 0) then
-        solveable = false
+        solveable = Just(false)
       else
         this.backtrack(backtrackDL)
         this.dL = backtrackDL
       end
     end
     WAMP("Leaving CDCL.solve()")
-    (solveable, done, conflict)
+    (solveable, conflict)
   end
 
   def checkCorrectness() : bool
@@ -337,4 +337,10 @@ active class CDCL
   def valueSelectionToString() : unit
     this.heuristics.valueSelectionToString()
   end
+
+  def variableValueSelectionPrint() : unit
+    this.heuristics.variableSelectionToString()
+    this.heuristics.valueSelectionToString()
+  end
+
 end

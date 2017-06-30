@@ -126,8 +126,13 @@ local class Assignments
     this.nSetVars = this.nSetVars + 2
   end
 
-  def finalAssignment() : FinalAssignment
-    new FinalAssignment(this.variables)
+  def finalAssignment() : Array[int]
+    val size = this.variables.size()
+    var res = new Array[int](size)
+    repeat i <- size do
+      res.set(i, this.variables.at(i).value)
+    end
+    consume res
   end
 
   def convertClauseToConflictClause(clause : Clause) : Clause
@@ -151,30 +156,18 @@ local class Assignments
 end
 
 
-read class FinalAssignment
-  val assignment : RArray[int]
-
-  def init(vars : LocalArray[Variable]) : unit
-    var res = new Array[int](vars.size())
-    repeat i <- vars.size() do
-      res.set(i, vars.at(i).value)
-    end
-    this.assignment = consume res
-  end
-
-  def toString() : unit
-    print("Assignments: ")
-    repeat i <- this.assignment.size() do
-      if this.assignment.at(i) == 0 then
-        print("{}", "-")
-      else if this.assignment.at(i) == -1 then
-        print("{}", "UNSAT")
-      end
-      print("x{} ", i+1)
-      if ((i + 1) * 2) % 5 == 0 then
-        println("")
-      end
-    end
-    println("")
-  end
-end
+  -- def toString() : unit
+  --   print("Assignments: ")
+  --   repeat i <- this.assignment.size() do
+  --     if this.assignment.at(i) == 0 then
+  --       print("{}", "-")
+  --     else if this.assignment.at(i) == -1 then
+  --       print("{}", "UNSAT")
+  --     end
+  --     print("x{} ", i+1)
+  --     if ((i + 1) * 2) % 5 == 0 then
+  --       println("")
+  --     end
+  --   end
+  --   println("")
+  -- end

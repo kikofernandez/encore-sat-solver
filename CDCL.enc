@@ -72,6 +72,7 @@ active class CDCL
     var solveable = true
     var done = false
     var conflict = false
+
     -- NOTE: important method unitPropagation
     if (this.unitPropagation(this.dL)) then -- NO CONFLICT
       if (this.allVariablesAssigned()) then

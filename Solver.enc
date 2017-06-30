@@ -100,10 +100,12 @@ active class Solver
               end
             end
           end
+
+          -- Considers restarting the process. this is done to start all over
+          -- from 0 but keeping the accumulated knowledge from the learnt clauses.
           this.restartCounter += 1
-          if this.restartCounter == this.restartCounterMax then
-            this.restartCounter = 0
-            this.cdcl!restart()
+          if this.shouldRestart() then
+            this.applyRestart()
           end
         end
       else
@@ -115,6 +117,15 @@ active class Solver
     val solver = this
     solver ! loop(solveable, done) -- send message to self to allow gc,
                                    -- and addConflictClause to run
+  end
+
+  def private shouldRestart(): bool
+    this.restartCounter == this.restartCounterMax
+  end
+
+  def private applyRestart(): unit
+    this.restartCounter = 0
+    this.cdcl!restart()
   end
 
   def addConflictClause(conflictClause : Clause) : unit

@@ -48,14 +48,15 @@ active class Solver
     var solved = this.loop(solveable)
     solveable = solved.0
     var result = solved.1
-    -- while isNothing(result) && isNothing(solveable) do
-    --   solved = this.loop(solveable)
-    --   solveable = solved.0
-    --   result = solved.1
-    -- end
-    -- return result
-    this.loop(solveable)
-    return Nothing
+    while isNothing(result) && isNothing(solveable) do
+      solved = this.loop(solveable)
+      solveable = solved.0
+      result = solved.1
+      -- print("{}.{}-", solveable, result)
+    end
+    return result
+    -- this.loop(solveable)
+    -- return Nothing
   where
     fun isNothing[t](solved : Maybe[t]): bool
       match solved with
@@ -108,9 +109,10 @@ active class Solver
     while (i < this.iterations) do
       WAMP("Iterating")
       -- TODO: bad design. blocking in a while loop...
-      if isUnknown(solveable) && not get(this.master!getIsSolved()) then
+      var solved = get(this.master!getIsSolved())
+      if isUnknown(solveable) && not solved then
         val res = get(this.cdcl!solve())
-        solveable = res.0
+        solveable = orMaybe(res.0, solved)
         if res.1 then -- conflict
           if this.ccNum == -1 || this.ccSent < this.ccNum then
             val conflictClause = get(this.cdcl!getLatestConflictClause())
@@ -140,12 +142,30 @@ active class Solver
     end
     -- FIXME
     -- WAMP("Out bottom of iteration")
-    val solver = this
-    solver ! loop(solveable) -- send message to self to allow gc,
-                                   -- and addConflictClause to run
-    -- this.suspend()
-    return (Nothing, Nothing) --(solveable, Nothing)
+    -- val solver = this
+    -- solver ! loop(solveable) -- send message to self to allow gc,
+    --                                -- and addConflictClause to run
+    this.suspend()
+    return (orMaybe(solveable, get(this.master!getIsSolved())), Nothing)
   where
+    fun orMaybe(solveable: Maybe[bool], stop : bool) : Maybe[bool]
+      if stop then
+        -- println("orStop: True")
+        return Just(true)
+      else
+        match solveable with
+          case Just(x) => do
+                            -- println("orStop: {}", x || stop)
+                            return Just(x || stop)
+                          end
+          case Nothing => do
+                            -- println("orStop: Nothing")
+                            return Nothing
+                          end
+        end
+      end
+    end
+
     fun isUnknown(solveable: Maybe[bool]): bool
       match solveable with
         case Nothing   => true

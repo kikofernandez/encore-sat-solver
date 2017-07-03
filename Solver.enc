@@ -42,20 +42,24 @@ active class Solver
   end
 
   def start() : unit
-    val solveable = true
+    val solveable = Nothing : Maybe[bool]
     val done = false
     WAMP("Started Solver.")
     this.loop(solveable, done)
   end
 
   -- TODO: some work to elimate the gets
-  def finishLoop(solveable : bool) : unit
+  def private finishLoop(solveable : Maybe[bool]) : unit
     if not get(this.master!getIsSolved()) then
-      if solveable then
+      val s = match solveable with
+                case Just(true) => true
+                case otherwise  => false
+              end
+      if s then
         this.master!setSolved()
         println("Satisfiable!")
         val correct = get(this.cdcl!checkCorrectness())
-        if correct && solveable then
+        if correct && s then
           println("Solution is correct, and was found by solver number {}:", this.solverId)
 	  -- TODO: make this one call!
           get(this.cdcl!variableSelectionToString())
@@ -79,13 +83,13 @@ active class Solver
   end
 
   -- TODO: much work to eliminate the gets
-  def loop(var solveable : bool, var done : bool) : unit
+  def loop(var solveable : Maybe[bool], var done : bool) : unit
     WAMP("Starting Loop.")
     var i = 0
     while (i < this.iterations) do
       WAMP("Iterating")
       -- TODO: bad design. blocking in a while loop...
-      if solveable && not done && not get(this.master!getIsSolved()) then
+      if isUnknown(solveable) && not done && not get(this.master!getIsSolved()) then
         val res = get(this.cdcl!solve())
         solveable = res.0
         done = res.1
@@ -109,7 +113,8 @@ active class Solver
           end
         end
       else
-        return this.finishLoop(solveable)
+        this.finishLoop(solveable)
+        return ()
       end
       i += 1
     end
@@ -117,6 +122,13 @@ active class Solver
     val solver = this
     solver ! loop(solveable, done) -- send message to self to allow gc,
                                    -- and addConflictClause to run
+  where
+    fun isUnknown(solveable: Maybe[bool]): bool
+      match solveable with
+        case Nothing => true
+        case Just(x) => false
+      end
+    end
   end
 
   def private shouldRestart(): bool

@@ -11,6 +11,7 @@ import LinearQueue
 import Array
 import ValueSelection
 import VariableSelection
+import Assignments
 
 fun unjustH(var h : Maybe[Heuristic]) : Heuristic
   EMBED (Heuristic) #{h}->val.p; END
@@ -300,7 +301,7 @@ active class Main
     var varsToAssign = this.preProcess(clauses, nVars)
     this.solvers = new [Solver](numSolvers)
 
-    val futs = new [Fut[unit]](numSolvers)
+    val futs = new [Fut[Maybe[(int, int, FinalAssignment)]]](numSolvers)
     repeat i <- numSolvers do
       this.solvers(i) = new Solver(parser.getClauses(), parser.getnVariables(), varsToAssign, unjustH(heuristics.dequeue()), this, i, ccLength, iterations, ccNumber, ccM, restarts)
     end

@@ -41,14 +41,32 @@ active class Solver
     this.restartCounterMax = restart
   end
 
-  def start() : unit
-    val solveable = Nothing : Maybe[bool]
+  def start() : Maybe[(int, int, FinalAssignment)]
+    var solveable = Nothing : Maybe[bool]
     WAMP("Started Solver.")
+    -- FIXME
+    -- var solved = this.loop(solveable)
+    -- solveable = solved.0
+    -- var result = solved.1
+    -- while isNothing(result) do
+    --   solved = this.loop(solveable)
+    --   solveable = solved.0
+    --   result = solved.1
+    -- end
+    -- return result
     this.loop(solveable)
+    return Nothing
+  where
+    fun isNothing[t](solved : Maybe[t]): bool
+      match solved with
+        case Nothing => true
+        case otherwise => false
+      end
+    end
   end
 
   -- TODO: some work to elimate the gets
-  def private finishLoop(solveable : Maybe[bool]) : unit
+  def private finishLoop(solveable : Maybe[bool]) : Maybe[(int, int, FinalAssignment)]
     if not get(this.master!getIsSolved()) then
       val s = match solveable with
                 case Just(true) => true
@@ -61,8 +79,7 @@ active class Solver
         if correct && s then
           println("Solution is correct, and was found by solver number {}:", this.solverId)
 	  -- TODO: make this one call!
-          get(this.cdcl!variableSelectionToString())
-          get(this.cdcl!valueSelectionToString())
+          get(this.cdcl!variableAndValueSelectionPrintout())
         else
           println("Solution is incorrect.")
         end
@@ -71,18 +88,20 @@ active class Solver
 	-- from CDCL in one object)
         val conflicts = get(this.cdcl!getAllConflicts())
         val assignments = get(this.cdcl!getAssignments())
-        val nSetVars = get(this.cdcl!getSetVars())
         assignments.toString()
         println("Number of own conflicts: {}, number of received conflicts {}", conflicts.0, conflicts.1)
         println("")
+        return Just((conflicts.0, conflicts.1, assignments))
       else
         println("Problem found unsatisfiable by solver {}", this.solverId)
+        return Nothing
       end
     end
+    return Nothing
   end
 
   -- TODO: much work to eliminate the gets
-  def loop(var solveable : Maybe[bool]) : unit
+  def loop(var solveable : Maybe[bool]) : (Maybe[bool], Maybe[(int, int, FinalAssignment)])
     WAMP("Starting Loop.")
     var i = 0
     while (i < this.iterations) do
@@ -111,15 +130,17 @@ active class Solver
           end
         end
       else
-        this.finishLoop(solveable)
-        return ()
+        return (solveable, this.finishLoop(solveable))
       end
       i += 1
     end
+    -- FIXME
+    -- return Nothing
     WAMP("Out bottom of iteration")
     val solver = this
     solver ! loop(solveable) -- send message to self to allow gc,
                                    -- and addConflictClause to run
+    return (solveable, Nothing)
   where
     fun isUnknown(solveable: Maybe[bool]): bool
       match solveable with

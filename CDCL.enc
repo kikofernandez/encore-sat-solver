@@ -336,4 +336,9 @@ active class CDCL
   def valueSelectionToString() : unit
     this.heuristics.valueSelectionToString()
   end
+
+  def variableAndValueSelectionPrintout() : unit
+    this.variableSelectionToString()
+    this.valueSelectionToString()
+  end
 end

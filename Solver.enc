@@ -43,9 +43,8 @@ active class Solver
 
   def start() : unit
     val solveable = Nothing : Maybe[bool]
-    val done = false
     WAMP("Started Solver.")
-    this.loop(solveable, done)
+    this.loop(solveable)
   end
 
   -- TODO: some work to elimate the gets
@@ -83,17 +82,16 @@ active class Solver
   end
 
   -- TODO: much work to eliminate the gets
-  def loop(var solveable : Maybe[bool], var done : bool) : unit
+  def loop(var solveable : Maybe[bool]) : unit
     WAMP("Starting Loop.")
     var i = 0
     while (i < this.iterations) do
       WAMP("Iterating")
       -- TODO: bad design. blocking in a while loop...
-      if isUnknown(solveable) && not done && not get(this.master!getIsSolved()) then
+      if isUnknown(solveable) && not get(this.master!getIsSolved()) then
         val res = get(this.cdcl!solve())
         solveable = res.0
-        done = res.1
-        if res.2 then -- conflict
+        if res.1 then -- conflict
           if this.ccNum == -1 || this.ccSent < this.ccNum then
             val conflictClause = get(this.cdcl!getLatestConflictClause())
             if this.ccLength == -1 || conflictClause.size() <= this.ccLength then
@@ -120,13 +118,13 @@ active class Solver
     end
     WAMP("Out bottom of iteration")
     val solver = this
-    solver ! loop(solveable, done) -- send message to self to allow gc,
+    solver ! loop(solveable) -- send message to self to allow gc,
                                    -- and addConflictClause to run
   where
     fun isUnknown(solveable: Maybe[bool]): bool
       match solveable with
-        case Nothing => true
-        case Just(x) => false
+        case Nothing   => true
+        case otherwise => false
       end
     end
   end

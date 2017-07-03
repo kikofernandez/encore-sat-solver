@@ -67,17 +67,15 @@ active class CDCL
     this.assignments.nSetVars
   end
 
-  def solve() : (Maybe[bool], bool, bool)
+  def solve() : (Maybe[bool], bool)
     WAMP("In CDCL.solve()")
     var solveable = Nothing : Maybe[bool]
-    var done = false
     var conflict = false
 
     -- NOTE: important method unitPropagation
     if (this.unitPropagation(this.dL)) then -- NO CONFLICT
       if (this.allVariablesAssigned()) then
         solveable = Just(true)
-        done = true
       else
         val indexAndLiteral = this.heuristics.getVariableSelection(this.assignments.getVariables(), this.instance.clauses)
         val varIndex = indexAndLiteral.0
@@ -103,7 +101,7 @@ active class CDCL
       end
     end
     WAMP("Leaving CDCL.solve()")
-    (solveable, done, conflict)
+    (solveable, conflict)
   end
 
   def checkCorrectness() : bool

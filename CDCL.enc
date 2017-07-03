@@ -70,7 +70,6 @@ local class CDCL
   def solve() : (Maybe[bool], bool)
     WAMP("In CDCL.solve()")
     var solveable = Nothing : Maybe[bool]
-    -- var done = false
     var conflict = false
 
     -- NOTE: important method unitPropagation

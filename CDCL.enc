@@ -260,7 +260,7 @@ local class CDCL
     val conflictClause = this.assignments.convertClauseToConflictClause(clauseToconvertToConflict)
     var backtrackDL = -1
     this.instance.addClause(conflictClause)
-    this.heuristics.addConflictClause(conflictClause)
+    this.heuristics.addConflictClause(conflictClause) -- add local conflict clauses
     this.latestConflictClause = conflictClause
     var vara = conflictClause.literals.at(0)
     if (vara % 2 == 0) then

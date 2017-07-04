@@ -314,6 +314,17 @@ active class Main
     for f <- futs do
       -- TODO: need a better way of synchronising multiple futures
       await(f)
+      match get(f) with
+        case Nothing => ()
+        case Just((ownConflicts, receivedConflicts, assignments)) =>
+          do
+            assignments.toString()
+            println("Number of own conflicts: {}, number of received conflicts {}",
+                    ownConflicts, receivedConflicts)
+            println("")
+          end
+        end
+      end
     end
     WAMP("Out the bottom")
   end

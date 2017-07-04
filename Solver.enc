@@ -87,9 +87,6 @@ active class Solver
 	-- from CDCL in one object)
         val conflicts = this.cdcl.getAllConflicts()
         val assignments = this.cdcl.getAssignments()
-        assignments.toString()
-        println("Number of own conflicts: {}, number of received conflicts {}", conflicts.0, conflicts.1)
-        println("")
         return Just((conflicts.0, conflicts.1, assignments))
       else
         println("Problem found unsatisfiable by solver {}", this.solverId)
@@ -100,65 +97,39 @@ active class Solver
   end
 
   -- TODO: much work to eliminate the gets
-  def loop(var solveable : Maybe[bool]) : (Maybe[bool], Maybe[(int, int, FinalAssignment)])
+  def loop(var solveable : Maybe[bool], var solved : bool = false) : (Maybe[bool], Maybe[(int, int, FinalAssignment)])
     WAMP("Starting Loop.")
-    var i = 0
-    while (i < this.iterations) do
+    repeat i <- this.iterations do
       WAMP("Iterating")
       -- TODO: bad design. blocking in a while loop...
-      var solved = get(this.master!getIsSolved())
+      solved = get(this.master!getIsSolved())
+
       if isUnknown(solveable) && not solved then
         val res = this.cdcl.solve()
-        solveable = orMaybe(res.0, solved)
-        if res.1 then -- conflict
-          if this.ccNum == -1 || this.ccSent < this.ccNum then
-            val conflictClause = this.cdcl.getLatestConflictClause()
-            if this.ccLength == -1 || conflictClause.size() <= this.ccLength then
-              this.ccCounter += 1
-              if this.ccCounter % this.ccM == 0 then
-                this.master ! addConflictClause(conflictClause, this.solverId)
-                this.ccSent += 1
-              end
-            end
-          end
+        solveable = maybe(res.0, solved)
+        this.handleConflict(res.1)
 
-          -- Considers restarting the process. this is done to start all over
-          -- from 0 but keeping the accumulated knowledge from the learnt clauses.
-          this.restartCounter += 1
-          if this.shouldRestart() then
-            this.applyRestart()
-          end
-        end
         if not isUnknown(solveable) then
           return (solveable, this.finishLoop(solveable))
         end
       else
         return (solveable, this.finishLoop(solveable))
       end
-      i += 1
     end
     -- FIXME
     -- WAMP("Out bottom of iteration")
-    -- val solver = this
-    -- solver ! loop(solveable) -- send message to self to allow gc,
+    -- return this ! loop(solveable) -- send message to self to allow gc,
     --                                -- and addConflictClause to run
     this.suspend()
-    return (orMaybe(solveable, get(this.master!getIsSolved())), Nothing)
+    return (maybe(solveable, solved), Nothing)
   where
-    fun orMaybe(solveable: Maybe[bool], stop : bool) : Maybe[bool]
-      if stop then
-        -- println("orStop: True")
+    fun maybe(solveable: Maybe[bool], default : bool) : Maybe[bool]
+      if default then
         return Just(true)
       else
         match solveable with
-          case Just(x) => do
-                            -- println("orStop: {}", x || stop)
-                            return Just(x || stop)
-                          end
-          case Nothing => do
-                            -- println("orStop: Nothing")
-                            return Nothing
-                          end
+          case Just(x) => return Just(x || default)
+          case Nothing => return Nothing
         end
       end
     end
@@ -167,6 +138,28 @@ active class Solver
       match solveable with
         case Nothing   => true
         case otherwise => false
+      end
+    end
+  end
+
+  def private handleConflict(conflict: bool): unit
+    if conflict then -- conflict
+      if this.ccNum == -1 || this.ccSent < this.ccNum then
+        val conflictClause = this.cdcl.getLatestConflictClause()
+        if this.ccLength == -1 || conflictClause.size() <= this.ccLength then
+          this.ccCounter += 1
+          if this.ccCounter % this.ccM == 0 then
+            this.master ! addConflictClause(conflictClause, this.solverId)
+            this.ccSent += 1
+          end
+        end
+      end
+
+      -- Considers restarting the process. this is done to start all over
+      -- from 0 but keeping the accumulated knowledge from the learnt clauses.
+      this.restartCounter += 1
+      if this.shouldRestart() then
+        this.applyRestart()
       end
     end
   end

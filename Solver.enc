@@ -54,6 +54,7 @@ active class Solver
       result = solved.1
     end
     return result
+    -- return this.loop(solveable)
   where
     fun isNothing[t](solved : Maybe[t]): bool
       match solved with
@@ -72,19 +73,16 @@ active class Solver
                 case Just(false)  => false
               end
       if s then
-        this.master!setSolved() -- critical region
+        this.master!setSolved()
+
         println("Satisfiable!")
-        val correct = this.cdcl.checkCorrectness()
-        if correct && s then
+        if this.cdcl.checkCorrectness() then
           println("Solution is correct, and was found by solver number {}:", this.solverId)
-	  -- TODO: make this one call!
           this.cdcl.variableAndValueSelectionPrintout()
         else
           println("Solution is incorrect.")
         end
 
-	-- TODO: make these one call (probably just return all results
-	-- from CDCL in one object)
         val conflicts = this.cdcl.getAllConflicts()
         val assignments = this.cdcl.getAssignments()
         return Just((conflicts.0, conflicts.1, assignments))
@@ -118,8 +116,8 @@ active class Solver
     end
     -- FIXME
     -- WAMP("Out bottom of iteration")
-    -- return this ! loop(solveable) -- send message to self to allow gc,
-    --                                -- and addConflictClause to run
+    -- this ! loop(solveable) -- send message to self to allow gc,
+    --                               -- and addConflictClause to run
     this.suspend()
     return (maybe(solveable, solved), Nothing)
   where

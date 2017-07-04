@@ -52,11 +52,8 @@ active class Solver
       solved = this.loop(solveable)
       solveable = solved.0
       result = solved.1
-      -- print("{}.{}-", solveable, result)
     end
     return result
-    -- this.loop(solveable)
-    -- return Nothing
   where
     fun isNothing[t](solved : Maybe[t]): bool
       match solved with
@@ -77,19 +74,19 @@ active class Solver
       if s then
         this.master!setSolved() -- critical region
         println("Satisfiable!")
-        val correct = get(this.cdcl!checkCorrectness())
+        val correct = this.cdcl.checkCorrectness()
         if correct && s then
           println("Solution is correct, and was found by solver number {}:", this.solverId)
 	  -- TODO: make this one call!
-          get(this.cdcl!variableAndValueSelectionPrintout())
+          this.cdcl.variableAndValueSelectionPrintout()
         else
           println("Solution is incorrect.")
         end
 
 	-- TODO: make these one call (probably just return all results
 	-- from CDCL in one object)
-        val conflicts = get(this.cdcl!getAllConflicts())
-        val assignments = get(this.cdcl!getAssignments())
+        val conflicts = this.cdcl.getAllConflicts()
+        val assignments = this.cdcl.getAssignments()
         assignments.toString()
         println("Number of own conflicts: {}, number of received conflicts {}", conflicts.0, conflicts.1)
         println("")
@@ -111,11 +108,11 @@ active class Solver
       -- TODO: bad design. blocking in a while loop...
       var solved = get(this.master!getIsSolved())
       if isUnknown(solveable) && not solved then
-        val res = get(this.cdcl!solve())
+        val res = this.cdcl.solve()
         solveable = orMaybe(res.0, solved)
         if res.1 then -- conflict
           if this.ccNum == -1 || this.ccSent < this.ccNum then
-            val conflictClause = get(this.cdcl!getLatestConflictClause())
+            val conflictClause = this.cdcl.getLatestConflictClause()
             if this.ccLength == -1 || conflictClause.size() <= this.ccLength then
               this.ccCounter += 1
               if this.ccCounter % this.ccM == 0 then
@@ -180,10 +177,10 @@ active class Solver
 
   def private applyRestart(): unit
     this.restartCounter = 0
-    this.cdcl!restart()
+    this.cdcl.restart()
   end
 
   def addConflictClause(conflictClause : Clause) : unit
-    this.cdcl!addConflictClause(conflictClause)
+    this.cdcl.addConflictClause(conflictClause)
   end
 end

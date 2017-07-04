@@ -11,7 +11,7 @@ import ImplicationGraph
 import Array
 import LocalArray
 
-active class CDCL
+local class CDCL
 -- private attributes
   val heuristics : Heuristic
   var assignments : Assignments

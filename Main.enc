@@ -13,6 +13,7 @@ import ValueSelection
 import VariableSelection
 import Assignments
 import SharedQueue(SharedQueue, Solution)
+import ParT.ParT
 
 fun unjustH(var h : Maybe[Heuristic]) : Heuristic
   EMBED (Heuristic) #{h}->val.p; END
@@ -26,12 +27,14 @@ active class Main
   var isSolved : bool
   var solvers : [Solver]
 
+  -- TODO: function on its own
   def addConflictClause(conflictClause : Clause, solverId : int) : unit
-    repeat i <- |this.solvers| do
-      if i != solverId then
-        (this.solvers(i))!addConflictClause(conflictClause)
-      end
-    end
+    -- repeat i <- |this.solvers| do
+    --   if i != solverId then
+    --     (this.solvers(i))!addConflictClause(conflictClause)
+    --   end
+    -- end
+    ()
   end
 
   def setSolved() : unit
@@ -303,31 +306,39 @@ active class Main
 
     val foundSolution = new Solution()
 
-    this.solvers = new [Solver](numSolvers)
+    val solvers = new [Solver](numSolvers)
 
     val futs = new [Fut[Maybe[(int, int, FinalAssignment)]]](numSolvers)
     repeat i <- numSolvers do
-      this.solvers(i) = new Solver(parser.getClauses(), parser.getnVariables(), varsToAssign, unjustH(heuristics.dequeue()), this, i, ccLength, iterations, ccNumber, ccM, restarts, foundSolution)
+      solvers(i) = new Solver(parser.getClauses(), parser.getnVariables(), varsToAssign, unjustH(heuristics.dequeue()), this, i, ccLength, iterations, ccNumber, ccM, restarts, foundSolution)
     end
-    repeat i <- numSolvers do
-      val solver = this.solvers(i)
-      WAMP("Calling Start")
-      futs(i) = solver!start()
-      futs(i) ~~> fun (sol : Maybe[(int, int, FinalAssignment)])
-                    match sol with
-                      case Nothing => ()
-                      case Just((ownConflicts, receivedConflicts, assignments)) =>
-                        do
-                          assignments.toString()
-                          println("Number of own conflicts: {}, number of received conflicts {}",
-                                  ownConflicts, receivedConflicts)
-                          println("")
-                        end
-                      end
-                    end
-                  end
-    end
+    -- TODO: print out solution
+    -- repeat i <- numSolvers do
+    --   val solver = solvers(i)
+    --   futs(i) = solver!start()
+    --   -- futs(i) ~~> fun (sol : Maybe[(int, int, FinalAssignment)])
+    --   --               match sol with
+    --   --                 case Nothing => ()
+    --   --                 case Just((ownConflicts, receivedConflicts, assignments)) =>
+    --   --                   do
+    --   --                     assignments.toString()
+    --   --                     println("Number of own conflicts: {}, number of received conflicts {}",
+    --   --                             ownConflicts, receivedConflicts)
+    --   --                     println("")
+    --   --                   end
+    --   --                 end
+    --   --               end
+    --   --             end
+    -- end
+
+    val p = bind(fun (solver : Solver) => liftf(solver!start()), each(solvers))
+    prune[Maybe[(int, int, FinalAssignment)], FinalAssignment](maybeToPar, p)
+
 
     WAMP("Out the bottom")
   end
+end
+
+fun maybeToPar(result: Fut[Maybe[Maybe[(int, int, FinalAssignment)]]]): Par[FinalAssignment]
+  empty[FinalAssignment]()
 end

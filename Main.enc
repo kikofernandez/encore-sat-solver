@@ -12,6 +12,7 @@ import Array
 import ValueSelection
 import VariableSelection
 import Assignments
+import SharedQueue(SharedQueue, Solution)
 
 fun unjustH(var h : Maybe[Heuristic]) : Heuristic
   EMBED (Heuristic) #{h}->val.p; END
@@ -299,33 +300,34 @@ active class Main
 
     WAMP("Creating Solver")
     var varsToAssign = this.preProcess(clauses, nVars)
+
+    val foundSolution = new Solution()
+
     this.solvers = new [Solver](numSolvers)
 
     val futs = new [Fut[Maybe[(int, int, FinalAssignment)]]](numSolvers)
     repeat i <- numSolvers do
-      this.solvers(i) = new Solver(parser.getClauses(), parser.getnVariables(), varsToAssign, unjustH(heuristics.dequeue()), this, i, ccLength, iterations, ccNumber, ccM, restarts)
+      this.solvers(i) = new Solver(parser.getClauses(), parser.getnVariables(), varsToAssign, unjustH(heuristics.dequeue()), this, i, ccLength, iterations, ccNumber, ccM, restarts, foundSolution)
     end
     repeat i <- numSolvers do
       val solver = this.solvers(i)
       WAMP("Calling Start")
       futs(i) = solver!start()
+      futs(i) ~~> fun (sol : Maybe[(int, int, FinalAssignment)])
+                    match sol with
+                      case Nothing => ()
+                      case Just((ownConflicts, receivedConflicts, assignments)) =>
+                        do
+                          assignments.toString()
+                          println("Number of own conflicts: {}, number of received conflicts {}",
+                                  ownConflicts, receivedConflicts)
+                          println("")
+                        end
+                      end
+                    end
+                  end
     end
 
-    for f <- futs do
-      -- TODO: need a better way of synchronising multiple futures
-      await(f)
-      match get(f) with
-        case Nothing => ()
-        case Just((ownConflicts, receivedConflicts, assignments)) =>
-          do
-            assignments.toString()
-            println("Number of own conflicts: {}, number of received conflicts {}",
-                    ownConflicts, receivedConflicts)
-            println("")
-          end
-        end
-      end
-    end
     WAMP("Out the bottom")
   end
 end

@@ -1,0 +1,19 @@
+module Solution
+
+read class Solution
+  -- private attribute
+  val solved : bool = false
+
+  def getIsSolved(): bool
+    EMBED (bool)
+      __atomic_load_n(&#{this.solved}, __ATOMIC_ACQUIRE);
+    END
+  end
+
+  def setSolved(): bool
+    EMBED (bool)
+      int64_t expected = 0;
+      __atomic_compare_exchange_n(&#{this.solved}, &expected, true, true, __ATOMIC_RELEASE, __ATOMIC_RELEASE);
+    END
+  end
+end

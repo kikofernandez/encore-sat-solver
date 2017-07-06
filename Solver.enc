@@ -8,13 +8,13 @@ import CDCL
 import Assignments
 import Util
 import Array
-import SharedQueue
+import Solution
+import Observable
 
-active class Solver
+active class Solver : IObserver[Clause](addConflictClause(), cdcl)
   val n_vars : int
   -- cdcl: each CDCL shares clauses and heuristics.
   val cdcl : CDCL
-  val master : Main  -- actor
   val solverId : int
   val iterations : int -- How long to spin before calling itself with a message
   val ccLength : int
@@ -22,6 +22,7 @@ active class Solver
   val ccNum : int -- How many conflict clauses to send
   val ccM : int
   val foundSolution : Solution
+  val observable : active IObservable[Clause]
 
   var ccSent : int = 0
   var ccCounter : int = -1
@@ -29,11 +30,10 @@ active class Solver
 
   -- TODO: varsToAssign is a read-only array
   def init(clauses : RVector[Clause], n_vars : int, varsToAssign : RArray[int],
-           var heuristic : Heuristic, master : Main, solverId : int,
+           var heuristic : Heuristic, solverId : int,
            ccLength : int, iterations : int, ccNumber : int, ccM : int,
-           restart : int, val foundSolution: Solution) : unit
+           restart : int, val foundSolution: Solution, val observable : active IObservable[Clause]) : unit
     this.n_vars = n_vars
-    this.master = master
     this.cdcl = new CDCL(clauses, this.n_vars, varsToAssign, consume heuristic, solverId)
     this.solverId = solverId
     this.ccLength = ccLength
@@ -42,6 +42,7 @@ active class Solver
     this.ccM = ccM
     this.restartCounterMax = restart
     this.foundSolution = foundSolution
+    this.observable = observable
   end
 
   def private finishLoop(solveable : Maybe[bool]) : Maybe[(int, int, FinalAssignment)]
@@ -69,6 +70,10 @@ active class Solver
     else
       return Nothing
     end
+  end
+
+  def notify(clause : Clause): unit
+    this.addConflictClause(clause)
   end
 
   def start(var solveable : Maybe[bool] = Nothing, var solved : bool = false) : Maybe[(int, int, FinalAssignment)]
@@ -117,7 +122,7 @@ active class Solver
         if this.ccLength == -1 || conflictClause.size() <= this.ccLength then
           this.ccCounter += 1
           if this.ccCounter % this.ccM == 0 then
-            this.master ! addConflictClause(conflictClause, this.solverId)
+            this.observable ! notifyAll((this.solverId, this), conflictClause)
             this.ccSent += 1
           end
         end

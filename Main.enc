@@ -12,7 +12,8 @@ import Array
 import ValueSelection
 import VariableSelection
 import Assignments
-import SharedQueue(SharedQueue, Solution)
+import Observable
+import Solution
 
 fun unjustH(var h : Maybe[Heuristic]) : Heuristic
   EMBED (Heuristic) #{h}->val.p; END
@@ -25,22 +26,6 @@ end
 active class Main
   var isSolved : bool
   var solvers : [Solver]
-
-  def addConflictClause(conflictClause : Clause, solverId : int) : unit
-    repeat i <- |this.solvers| do
-      if i != solverId then
-        (this.solvers(i))!addConflictClause(conflictClause)
-      end
-    end
-  end
-
-  def setSolved() : unit
-      this.isSolved = true
-  end
-
-  def getIsSolved() : bool
-      this.isSolved
-  end
 
   def charToInt(c : char) : int
     if (c == '0') then
@@ -304,10 +289,11 @@ active class Main
     val foundSolution = new Solution()
 
     this.solvers = new [Solver](numSolvers)
-
     val futs = new [Fut[Maybe[(int, int, FinalAssignment)]]](numSolvers)
+    val observable = new Observable[Clause]()
     repeat i <- numSolvers do
-      this.solvers(i) = new Solver(parser.getClauses(), parser.getnVariables(), varsToAssign, unjustH(heuristics.dequeue()), this, i, ccLength, iterations, ccNumber, ccM, restarts, foundSolution)
+      this.solvers(i) = new Solver(parser.getClauses(), parser.getnVariables(), varsToAssign, unjustH(heuristics.dequeue()), i, ccLength, iterations, ccNumber, ccM, restarts, foundSolution, observable)
+      observable ! addObserver((i, this.solvers(i)))
     end
     repeat i <- numSolvers do
       val solver = this.solvers(i)

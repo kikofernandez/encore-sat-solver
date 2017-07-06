@@ -1,0 +1,49 @@
+module Observable
+
+import Clause
+import Array
+import VVector
+
+--
+-- Observers
+--
+-- Implements the observer pattern.
+-- An observer object subscribes to updates from the observable instance.
+-- Any object can notify the subscribers by calling the public method
+-- `notifyAll()` from the observable instance.
+--
+
+active trait IObserver[sharable v]
+  require def notify(item: v): unit
+end
+
+trait IObservable[v]
+  require def addObserver(subscriber: (uint, IObserver[v])): unit
+  require def notifyAll(subscriber: (uint, IObserver[v]), item : v): unit
+end
+
+active class Observable[sharable v]: IObservable[v](observers)
+  var observers: VVector[(uint, IObserver[v])]
+  val DEFAULT_INIT_SIZE: uint = 10
+
+  def init(): unit
+    this.observers = new VVector[(uint, IObserver[v])](this.DEFAULT_INIT_SIZE)
+  end
+
+  def addObserver(observer: (uint, IObserver[v])): unit
+    this.observers.push(observer)
+  end
+
+  def notifyAll(subscriber: (uint, IObserver[v]), item : v): unit
+    var observers = consume this.observers
+
+    repeat i <- observers.size() do
+      val sub = observers.at(i)
+      if sub.0 != subscriber.0 then
+        sub.1!notify(item)
+      end
+    end
+
+    this.observers = consume observers
+  end
+end

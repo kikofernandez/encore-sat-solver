@@ -11,6 +11,50 @@ import Array
 import Solution
 import Observable
 
+active class Proxy
+  val solver: Solver
+
+  def init(clauses : RVector[Clause], n_vars : int, varsToAssign : RArray[int],
+           var heuristic : Heuristic, solverId : int,
+           ccLength : int, iterations : int, ccNumber : int, ccM : int,
+           restart : int, val foundSolution: Solution, val observable : active IObservable[Clause]) : unit
+    this.solver = new Solver(clauses, n_vars, varsToAssign, consume heuristic, solverId, ccLength,
+                             iterations, ccNumber, ccM, restart, foundSolution, observable)
+    observable ! addObserver((solverId, this.solver))
+  end
+
+  def start(): Maybe[(int, int, FinalAssignment)]
+    var solveable = Nothing : Maybe[bool]
+    while true do
+      val solution = get(this.solver!start(solveable))
+      match solution.0 with
+        case Nothing =>
+          do
+            -- we don't know if satisfiable in this solver and no other solver has yet found a solution
+            Nothing : Maybe[(int, int, FinalAssignment)]
+          end
+        end
+        case Just(true) =>
+          do
+            -- there is a solution. Check whether we found the solution or
+            -- if someone else found the solution
+            match solution.1 with
+              -- case Nothing => someone else found the solution
+              case Nothing => return Nothing
+              -- case result => this solver found the solution
+              case result =>  return result
+            end
+          end
+        end
+        -- problem is unsatisfiable. finish.
+        case Just(false) => Nothing
+      end
+    end
+    return Nothing
+  end
+
+end
+
 active class Solver : IObserver[Clause](addConflictClause(), cdcl)
   val n_vars : int
   -- cdcl: each CDCL shares clauses and heuristics.
@@ -45,12 +89,28 @@ active class Solver : IObserver[Clause](addConflictClause(), cdcl)
     this.observable = observable
   end
 
-  def private finishLoop(solveable : Maybe[bool]) : Maybe[(int, int, FinalAssignment)]
+  --
+  -- writeSolution
+  --
+  -- method call when the solver has found a solution.
+  -- possible outcomes: the solver is the first one to find a solution and returns
+  -- that solution to the caller. the solver found a solution but is not the first
+  -- one to find the problem satisfiable, returns Nothing.
+  --
+  -- Result:
+  --
+  -- case (Just(true), solution): problem is satisfiable and provide solution
+  -- case (Just(true), Nothing): problem is satisfiable but this solver was not
+  --                             the first one to find a solution.
+  -- case (Just(false), Nothing): problem is not satisfiable
+  -- case (Nothing, solution): error
+  def private writeSolution(solveable : Maybe[bool]) : (Maybe[bool], Maybe[(int, int, FinalAssignment)])
     val hasSolution = match solveable with
-                        case Nothing      => abort("Error on finishLoop")
+                        case Nothing      => abort("Error on writeSolution")
                         case Just(true)   => true
                         case Just(false)  => false
                       end
+
     -- has solution and can atomically set it to true, then I am the solver!
     if hasSolution && this.foundSolution.setSolved() then
         println("Satisfiable!")
@@ -63,20 +123,25 @@ active class Solver : IObserver[Clause](addConflictClause(), cdcl)
 
         val conflicts = this.cdcl.getAllConflicts()
         val assignments = this.cdcl.getAssignments()
-        return Just((conflicts.0, conflicts.1, assignments))
+        return (Just(true), Just((conflicts.0, conflicts.1, assignments)))
     else if (not hasSolution) then
       println("Problem found unsatisfiable by solver {}", this.solverId)
-      return Nothing : Maybe[(int, int, FinalAssignment)]
+      return (Just(false), Nothing : Maybe[(int, int, FinalAssignment)])
     else
-      return Nothing
+      return (Just(true), Nothing)
     end
   end
 
+  --
+  -- notify
+  --
+  -- add clauses to my knowledge base. used in combination to the observer pattern
+  --
   def notify(clause : Clause): unit
     this.addConflictClause(clause)
   end
 
-  def start(var solveable : Maybe[bool] = Nothing, var solved : bool = false) : Maybe[(int, int, FinalAssignment)]
+  def start(var solveable : Maybe[bool] = Nothing, var solved : bool = false) : (Maybe[bool], Maybe[(int, int, FinalAssignment)])
     WAMP("Starting Loop.")
     repeat i <- this.iterations do
       WAMP("Iterating")
@@ -86,15 +151,17 @@ active class Solver : IObserver[Clause](addConflictClause(), cdcl)
         val res = this.cdcl.solve()
         solveable = maybe(res.0, solved)
         this.handleConflict(res.1)
-      else if not isNothing(solveable) && not solved then
-          return this.finishLoop(solveable)
-      else
-        return Nothing
+      end
+
+      -- if I found the solution before any other solver
+      if not isNothing(solveable) && not solved then
+        return this.writeSolution(solveable)
+      else if solved then
+        return (Just(true), Nothing)
       end
     end
-    var futResult = this!start(solveable)
-    await(futResult)
-    return get(futResult)
+
+    return (solveable, Nothing)
   where
     fun maybe(solveable: Maybe[bool], default : bool) : Maybe[bool]
       if default then

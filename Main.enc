@@ -24,10 +24,8 @@ fun unjustH(var h : Maybe[Heuristic]) : Heuristic
 end
 
 active class Main
-  var isSolved : bool
-  var solvers : [Solver]
 
-  def charToInt(c : char) : int
+  def private charToInt(c : char) : int
     if (c == '0') then
       0
     else if (c == '1') then
@@ -54,7 +52,7 @@ active class Main
     end
   end
 
-  def stringToInt(s : String) : int
+  def private stringToInt(s : String) : int
     val carr = s.to_array()
     var sum = 0
     var mul = 1
@@ -71,7 +69,7 @@ active class Main
     sum
   end
 
-  def preProcess(clauses : RVector[Clause], nVars : int) : RArray[int]
+  def private preProcess(clauses : RVector[Clause], nVars : int) : RArray[int]
     val exists = new Array[bool](nVars)
 
     var j = 0
@@ -151,7 +149,6 @@ active class Main
   end
 
   def main(args : [String]) : unit
-    this.isSolved = false
     if ((|args| == 1) || ((args(1)).equals("-h"))) then
         println("{}", "Usage: ")
         println("{}", args(0))
@@ -288,15 +285,14 @@ active class Main
 
     val foundSolution = new Solution()
 
-    this.solvers = new [Solver](numSolvers)
+    val solvers = new [Proxy](numSolvers)
     val futs = new [Fut[Maybe[(int, int, FinalAssignment)]]](numSolvers)
     val observable = new Observable[Clause]()
     repeat i <- numSolvers do
-      this.solvers(i) = new Solver(parser.getClauses(), parser.getnVariables(), varsToAssign, unjustH(heuristics.dequeue()), i, ccLength, iterations, ccNumber, ccM, restarts, foundSolution, observable)
-      observable ! addObserver((i, this.solvers(i)))
+      solvers(i) = new Proxy(parser.getClauses(), parser.getnVariables(), varsToAssign, unjustH(heuristics.dequeue()), i, ccLength, iterations, ccNumber, ccM, restarts, foundSolution, observable)
     end
     repeat i <- numSolvers do
-      val solver = this.solvers(i)
+      val solver = solvers(i)
       WAMP("Calling Start")
       futs(i) = solver!start()
       futs(i) ~~> fun (sol : Maybe[(int, int, FinalAssignment)])
